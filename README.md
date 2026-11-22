@@ -1,4 +1,6 @@
-# o1 agent
+# Sequa
+
+A guarded trading agent for o1 Launchpad on Base: every trade runs read → screen → prepare (o1 API) → firewall → you approve → execute.
 
 A guarded trading agent for [o1.exchange](https://o1.exchange) on Base.
 
