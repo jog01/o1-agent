@@ -93,7 +93,11 @@ button:disabled { cursor: not-allowed; }
 ::selection { background: #9cd6ff33; color: #fff; }
 input, textarea, select { accent-color: var(--o1-blue); }
 input::placeholder, textarea::placeholder { color: #7f8896; }
-input[type='number'] { font-variant-numeric: tabular-nums; }
+input[type='number'], .tabular-nums, .numeric, [data-numeric] {
+  /* Poppins has proportional digits and no tnum feature; use real fixed widths. */
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 input[type='checkbox'] { width: 16px; height: 16px; }
 textarea { resize: vertical; }
 code, pre, .mono { font-family: var(--font-mono); }
