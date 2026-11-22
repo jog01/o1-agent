@@ -337,31 +337,31 @@ async fn run_chain(app: App, args: Arc<Args>) -> anyhow::Result<()> {
     }
 }
 
+/// Plays the recording once at `speed`, then keeps the final state so the feed never empties mid-demo.
 async fn run_replay(app: App, path: String, speed: f64) -> anyhow::Result<()> {
-    loop {
-        let text = tokio::fs::read_to_string(&path).await?;
-        let events: Vec<Event> = text
-            .lines()
-            .filter_map(|l| serde_json::from_str(l).ok())
-            .collect();
-        tracing::info!(n = events.len(), "replaying recording");
-        *app.store.write().await = Store::default();
-        let mut prev: Option<u64> = None;
-        for e in events {
-            let ts = match &e {
-                Event::Launch { ts, .. } | Event::Trade { ts, .. } => *ts,
-            };
-            if let Some(p) = prev {
-                let gap = ts.saturating_sub(p) as f64 / speed;
-                if gap > 0.0 {
-                    tokio::time::sleep(Duration::from_secs_f64(gap.min(5.0))).await;
-                }
+    let text = tokio::fs::read_to_string(&path).await?;
+    let events: Vec<Event> = text
+        .lines()
+        .filter_map(|l| serde_json::from_str(l).ok())
+        .collect();
+    tracing::info!(n = events.len(), "replaying recording");
+    let mut prev: Option<u64> = None;
+    for e in events {
+        let ts = match &e {
+            Event::Launch { ts, .. } | Event::Trade { ts, .. } => *ts,
+        };
+        if let Some(p) = prev {
+            let gap = ts.saturating_sub(p) as f64 / speed;
+            if gap > 0.0 {
+                tokio::time::sleep(Duration::from_secs_f64(gap.min(5.0))).await;
             }
-            prev = Some(ts);
-            emit(&app, e, &mut None).await;
         }
-        tokio::time::sleep(Duration::from_secs(10)).await;
+        prev = Some(ts);
+        emit(&app, e, &mut None).await;
     }
+    tracing::info!("replay finished; holding final state");
+    std::future::pending::<()>().await;
+    Ok(())
 }
 
 async fn tokens(State(app): State<App>) -> impl IntoResponse {
