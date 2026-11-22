@@ -45,7 +45,7 @@ export default function App() {
   return <div className="app-shell">
     <a className="skip-link" href="#main">Skip to dashboard</a>
     <header className="topbar">
-      <a className="brand" href="/" aria-label="o1 agent dashboard"><span className="brand-mark" aria-hidden="true">o1</span><span className="brand-divider" /><span>agent<span className="brand-subtitle">GUARDED TERMINAL</span></span></a>
+      <a className="brand" href="/" aria-label="o1 agent dashboard"><img className="brand-logo" src="/brand/o1-wordmark-white.svg" width="55" height="28" alt="o1" /><span className="brand-divider" /><span>agent<span className="brand-subtitle">GUARDED TERMINAL</span></span></a>
       <div className="topbar-status"><span className={cn("mode-badge", state?.mode === "live" && "mode-live")}>{state?.mode.toUpperCase() ?? "CONNECTING"}</span><span className="mode-description">{state?.mode === "live" ? "Base mainnet · real money" : state?.mode === "fork" ? "Signed execution · local fork" : "Local Base fork · no real money"}</span></div>
       <div className="topbar-controls"><span className={cn("connection-label", !connected && "negative")} title={lastUpdate ? `Last snapshot: ${new Date(lastUpdate).toLocaleTimeString()}` : "Waiting for first snapshot"}>{connected ? <Circle size={7} fill="currentColor" /> : <WifiOff size={13} />}{connection === "live" ? "Live feed" : connection === "polling" ? "Polling · 5s" : connection === "connecting" ? "Connecting" : "Disconnected"}</span><Button variant="destructive" className={cn("kill-switch", state?.policy.killSwitch && "is-killed")} disabled={!state || !connected || pending.has("kill")} aria-pressed={state?.policy.killSwitch ?? false} onClick={() => {
         if (!state) return;
