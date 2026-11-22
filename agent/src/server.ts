@@ -20,7 +20,7 @@ const isApprover = (c: any) => !config.approverToken || c.req.header("x-approver
 const denied = (c: any) => c.json({ error: "approver token required" }, 401);
 
 app.get("/api/health", (c) => c.json({ ok: true, mode: config.mode, indexer: agent.indexerOk }));
-app.get("/api/state", (c) => c.json({ ...agent.snapshot(), approverTokenRequired: Boolean(config.approverToken) }));
+app.get("/api/state", (c) => c.json(agent.snapshot()));
 
 app.get("/api/events", (c) =>
   streamSSE(c, async (s) => {

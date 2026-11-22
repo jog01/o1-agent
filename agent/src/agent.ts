@@ -286,6 +286,7 @@ export class Agent extends EventEmitter {
       signer: this.signer(),
       indexerOk: this.indexerOk,
       apiConfigured: Boolean(config.o1ApiToken),
+      approverTokenRequired: Boolean(config.approverToken),
       policy: this.policy,
       rules: this.rules,
       spentTodayUsd: this.spentTodayUsd(),
