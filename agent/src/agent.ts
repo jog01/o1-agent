@@ -5,9 +5,9 @@ import { formatUnits, parseEther, type Address } from "viem";
 import { config } from "./config.js";
 import { execute, signerAddress, walletNonce } from "./executor.js";
 import { prepareOrder } from "./o1.js";
-import { BASE_CHAIN_ID, checkIntent, checkPrepared, defaultPolicy } from "./policy.js";
+import { BASE_CHAIN_ID, checkIntent, checkPrepared, defaultPolicy, validatePolicy } from "./policy.js";
 import { ethUsd } from "./price.js";
-import { defaultRules, screen } from "./rules.js";
+import { defaultRules, screen, validateRules } from "./rules.js";
 import type { IndexedToken, LogLine, Policy, Proposal, Rules, Screen } from "./types.js";
 
 export interface ScreenedToken extends IndexedToken {
@@ -30,6 +30,8 @@ export class Agent extends EventEmitter {
   log: LogLine[] = [];
   indexerOk = false;
   private seen = new Set<string>();
+  private proposed = new Set<string>();
+  private queue: Promise<unknown> = Promise.resolve();
   private primed = false;
 
   constructor() {
@@ -44,6 +46,12 @@ export class Agent extends EventEmitter {
       this.policy = { ...this.policy, ...s.policy };
       this.rules = { ...this.rules, ...s.rules };
       this.proposals = s.proposals ?? [];
+      for (const p of this.proposals)
+        if (p.status === "executing" || p.status === "preparing") {
+          if (p.status === "executing") p.spent = true;
+          p.status = "failed";
+          p.error = `Interrupted by a restart while ${p.status}; check ${p.txHash ?? "the signer's history"} before retrying`;
+        }
     } catch {}
   }
 
@@ -67,7 +75,7 @@ export class Agent extends EventEmitter {
   spentTodayUsd(): number {
     const since = Date.now() - DAY;
     return this.proposals
-      .filter((p) => p.createdAt > since && (p.status === "filled" || p.status === "executing"))
+      .filter((p) => (p.executedAt ?? p.createdAt) > since && (p.status === "filled" || p.status === "executing" || p.spent))
       .reduce((s, p) => s + p.amountUsd, 0);
   }
 
@@ -96,11 +104,15 @@ export class Agent extends EventEmitter {
     this.tokens = raw.map((t) => ({ ...t, screen: screen(t, raw, this.rules, now) }));
     for (const t of this.tokens) {
       const key = t.token.toLowerCase();
-      if (this.seen.has(key)) continue;
+      const fresh = !this.seen.has(key);
       this.seen.add(key);
-      if (!this.primed) continue;
-      this.say("info", `New launch: ${t.symbol || t.token} (${t.suite})`);
-      if (this.policy.autoPropose && t.screen.pass) {
+      if (!this.primed) {
+        if (t.screen.pass) this.proposed.add(key);
+        continue;
+      }
+      if (fresh) this.say("info", `New launch: ${t.symbol || t.token} (${t.suite})`);
+      if (this.policy.autoPropose && t.screen.pass && !this.proposed.has(key) && !this.proposals.some((p) => p.token.toLowerCase() === key)) {
+        this.proposed.add(key);
         this.say("action", `${t.symbol} passed the safety screen, proposing a $${this.policy.maxPerTradeUsd} buy`);
         void this.propose(t.token, this.policy.maxPerTradeUsd, "agent");
       }
@@ -124,6 +136,7 @@ export class Agent extends EventEmitter {
   }
 
   async propose(token: Address, amountUsd: number, source: Proposal["source"]): Promise<Proposal> {
+    if (!Number.isFinite(amountUsd) || amountUsd <= 0) throw new Error("amountUsd must be a positive number");
     const t = this.tokens.find((x) => x.token.toLowerCase() === token.toLowerCase());
     const price = await ethUsd();
     const amountEth = Number((amountUsd / price).toFixed(8));
@@ -174,7 +187,7 @@ export class Agent extends EventEmitter {
       } else {
         p.status = "awaiting_approval";
         this.say("info", `o1 prepared ${p.symbol} buy: ${amountEth} ETH via ${tx.to.slice(0, 10)}…, gas ${tx.gas}`);
-        if (!this.policy.requireApproval) void this.approve(p.id);
+        if (!this.policy.requireApproval && source !== "mcp") void this.approve(p.id);
       }
     } catch (e: any) {
       p.status = "failed";
@@ -188,8 +201,10 @@ export class Agent extends EventEmitter {
   async approve(id: string): Promise<Proposal> {
     const p = this.must(id);
     if (p.status !== "awaiting_approval" || !p.prepared) throw new Error(`Proposal is ${p.status}`);
+    const current = this.tokens.find((x) => x.token.toLowerCase() === p.token.toLowerCase())?.screen;
+    if (current) p.screen = current;
     const again = [
-      ...checkIntent(this.policy, { chainId: BASE_CHAIN_ID, token: p.token, amountUsd: p.amountUsd, slippageBps: p.slippageBps, screenPassed: p.screen?.pass ?? false }, this.spentTodayUsd()),
+      ...checkIntent(this.policy, { chainId: BASE_CHAIN_ID, token: p.token, amountUsd: p.amountUsd, slippageBps: p.slippageBps, screenPassed: current?.pass ?? false }, this.spentTodayUsd()),
       ...checkPrepared(this.policy, p.prepared, p.signer, parseEther(p.amountEth.toFixed(18))),
     ];
     if (again.length) {
@@ -200,17 +215,27 @@ export class Agent extends EventEmitter {
       return p;
     }
     p.status = "executing";
+    p.executedAt = Date.now();
     this.say("action", `Approved. Signing and executing ${p.symbol} buy on ${config.mode === "live" ? "Base mainnet" : "a local Base fork"}`);
     this.changed();
     try {
-      const r = await execute(p.prepared, p.token);
+      // One fork, one trade at a time: each execution resets the fork.
+      const run = this.queue.then(() => {
+        if (this.policy.killSwitch) throw new Error("Kill switch turned on before this trade was sent");
+        return execute(p.prepared!, p.token, (hash) => { p.txHash = hash; p.spent = true; this.changed(); });
+      });
+      this.queue = run.catch(() => {});
+      const r = await run;
       p.txHash = r.txHash;
       p.gasUsed = r.gasUsed;
       p.forkBlock = r.forkBlock;
-      p.tokensReceived = formatUnits(BigInt(r.tokensReceived), 18);
+      p.tokensReceived = r.tokensReceived === undefined ? undefined : formatUnits(BigInt(r.tokensReceived), 18);
       p.status = r.status === "success" ? "filled" : "failed";
-      if (r.status !== "success") p.error = "Transaction reverted";
-      this.say(p.status === "filled" ? "action" : "warn", p.status === "filled" ? `Filled: received ${Number(p.tokensReceived).toLocaleString()} ${p.symbol}, gas ${r.gasUsed}` : `Reverted: ${p.symbol}`);
+      if (r.status !== "success") {
+        p.error = "Transaction reverted";
+        p.spent = false;
+      }
+      this.say(p.status === "filled" ? "action" : "warn", p.status === "filled" ? `Filled: received ${p.tokensReceived ? Number(p.tokensReceived).toLocaleString() : "an unknown amount of"} ${p.symbol}, gas ${r.gasUsed}` : `Reverted: ${p.symbol}`);
     } catch (e: any) {
       p.status = "failed";
       p.error = String(e.shortMessage ?? e.message ?? e);
@@ -237,13 +262,13 @@ export class Agent extends EventEmitter {
   }
 
   updatePolicy(patch: Partial<Policy>) {
-    this.policy = { ...this.policy, ...patch };
+    this.policy = validatePolicy({ ...this.policy, ...patch });
     this.say("info", "Policy updated");
     this.changed();
   }
 
   updateRules(patch: Partial<Rules>) {
-    this.rules = { ...this.rules, ...patch };
+    this.rules = validateRules({ ...this.rules, ...patch });
     this.say("info", "Safety rules updated");
     void this.refresh();
     this.changed();
@@ -261,6 +286,7 @@ export class Agent extends EventEmitter {
       signer: this.signer(),
       indexerOk: this.indexerOk,
       apiConfigured: Boolean(config.o1ApiToken),
+      approverTokenRequired: Boolean(config.approverToken),
       policy: this.policy,
       rules: this.rules,
       spentTodayUsd: this.spentTodayUsd(),

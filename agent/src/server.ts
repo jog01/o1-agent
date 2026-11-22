@@ -11,6 +11,14 @@ const app = new Hono();
 
 const fail = (c: any, e: any) => c.json({ error: String(e?.message ?? e) }, 400);
 
+if (config.mode !== "demo" && config.approverToken.length < 16) {
+  console.error(`APPROVER_TOKEN (16+ chars) is required in ${config.mode} mode`);
+  process.exit(1);
+}
+/** Human-only actions. Demo mode with no token set is open, since it cannot spend anything. */
+const isApprover = (c: any) => !config.approverToken || c.req.header("x-approver-token") === config.approverToken;
+const denied = (c: any) => c.json({ error: "approver token required" }, 401);
+
 app.get("/api/health", (c) => c.json({ ok: true, mode: config.mode, indexer: agent.indexerOk }));
 app.get("/api/state", (c) => c.json(agent.snapshot()));
 
@@ -38,13 +46,15 @@ app.post("/api/proposals", async (c) => {
   const b = await c.req.json().catch(() => ({}));
   if (!isAddress(b.token)) return fail(c, "token must be an address");
   try {
-    return c.json(await agent.propose(b.token as Address, Number(b.amountUsd ?? agent.policy.maxPerTradeUsd), b.source === "mcp" ? "mcp" : "user"));
+    const source = isApprover(c) && b.source !== "mcp" ? "user" : "mcp";
+    return c.json(await agent.propose(b.token as Address, Number(b.amountUsd ?? agent.policy.maxPerTradeUsd), source));
   } catch (e) {
     return fail(c, e);
   }
 });
-app.post("/api/scan", async (c) => c.json((await agent.scan()) ?? null));
+app.post("/api/scan", async (c) => (isApprover(c) ? c.json((await agent.scan()) ?? null) : denied(c)));
 app.post("/api/proposals/:id/approve", async (c) => {
+  if (!isApprover(c)) return denied(c);
   try {
     return c.json(await agent.approve(c.req.param("id")));
   } catch (e) {
@@ -52,6 +62,7 @@ app.post("/api/proposals/:id/approve", async (c) => {
   }
 });
 app.post("/api/proposals/:id/reject", (c) => {
+  if (!isApprover(c)) return denied(c);
   try {
     return c.json(agent.reject(c.req.param("id")));
   } catch (e) {
@@ -60,17 +71,28 @@ app.post("/api/proposals/:id/reject", (c) => {
 });
 app.post("/api/kill", async (c) => {
   const b = await c.req.json().catch(() => ({}));
-  agent.setKill(Boolean(b.on));
+  if (b.on !== true && !isApprover(c)) return denied(c);
+  agent.setKill(b.on === true);
   return c.json(agent.policy);
 });
 app.patch("/api/policy", async (c) => {
+  if (!isApprover(c)) return denied(c);
   const b = await c.req.json().catch(() => ({}));
   const { killSwitch: _ignored, ...patch } = b;
-  agent.updatePolicy(patch);
+  try {
+    agent.updatePolicy(patch);
+  } catch (e) {
+    return fail(c, e);
+  }
   return c.json(agent.policy);
 });
 app.patch("/api/rules", async (c) => {
-  agent.updateRules(await c.req.json().catch(() => ({})));
+  if (!isApprover(c)) return denied(c);
+  try {
+    agent.updateRules(await c.req.json().catch(() => ({})));
+  } catch (e) {
+    return fail(c, e);
+  }
   return c.json(agent.rules);
 });
 
