@@ -107,7 +107,7 @@ export class Agent extends EventEmitter {
     this.tokens = raw.map((t) => ({ ...t, imageUrl: imageUrl(t.token), screen: screen(t, raw, this.rules, now) }));
     void resolveImages(raw.map((t) => t.token), () => {
       for (const t of this.tokens) t.imageUrl = imageUrl(t.token);
-      for (const p of this.proposals) p.imageUrl ??= imageUrl(p.token);
+      for (const p of this.proposals) p.imageUrl = imageUrl(p.token) ?? p.imageUrl;
       this.changed();
     });
     for (const t of this.tokens) {

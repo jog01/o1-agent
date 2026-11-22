@@ -12,3 +12,10 @@ describe("toGateway", () => {
     expect(toGateway("data:image/png;base64,AA")).toBeUndefined();
   });
 });
+
+describe("imageUrl", () => {
+  it("is absent until the image has been fetched and cached", async () => {
+    const { imageUrl } = await import("../src/metadata.js");
+    expect(imageUrl("0x0000000000000000000000000000000000000001")).toBeUndefined();
+  });
+});
