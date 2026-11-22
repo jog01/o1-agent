@@ -10,6 +10,7 @@ const labels: Record<Proposal["status"], string> = { preparing: "Preparing", awa
 interface Actions {
   mode: AgentState["mode"]; killed: boolean; connected: boolean; authorized?: boolean;
   pending: Set<string>; onDecision: (proposal: Proposal, decision: "approve" | "reject") => void;
+  decisionError?: { id: string; message: string }; onManageAccess?: () => void;
 }
 interface Props extends Actions { proposals: Proposal[]; tokens?: Token[]; onViewFeed?: () => void; active?: boolean }
 type Identity = Pick<Token, "token" | "symbol" | "name" | "imageUrl">;
@@ -60,8 +61,9 @@ export default function Proposals({ proposals, tokens = [], onViewFeed, active =
   </section>;
 }
 
-function ProposalDetails({ proposal: p, identity, mode, killed, connected, authorized = true, pending, onDecision, onClose }: Actions & { proposal: Proposal; identity: Identity; onClose: () => void }) {
+function ProposalDetails({ proposal: p, identity, mode, killed, connected, authorized = true, pending, onDecision, decisionError, onManageAccess, onClose }: Actions & { proposal: Proposal; identity: Identity; onClose: () => void }) {
   const busy = pending.has(`decision:${p.id}`);
+  const actionError = decisionError?.id === p.id ? decisionError.message : undefined;
   const passedFirewall = p.prepared && !p.violations.length && ["awaiting_approval", "executing", "filled"].includes(p.status);
   return <>
     <header className="proposal-detail-header"><h2 id="proposal-detail-heading" tabIndex={-1}>Review proposal</h2><Button variant="ghost" size="icon" aria-label="Close proposal details" onClick={onClose}><X size={16} /></Button></header>
@@ -72,6 +74,7 @@ function ProposalDetails({ proposal: p, identity, mode, killed, connected, autho
       {passedFirewall && <p className="firewall-line positive"><ShieldCheck size={13} />Firewall: passed<span className="muted">Chain · contract · value · nonce</span></p>}
       {!!p.violations.length && <ul className="violations" aria-label="Policy violations">{p.violations.map((v, i) => <li key={i}>{v}</li>)}</ul>}
       {p.error && <p className="proposal-error negative">{p.error}</p>}
+      {(actionError || !authorized) && <div><p className="proposal-error negative" role="alert">{actionError || "Approver access is required to approve or reject."}</p>{!authorized && onManageAccess && <Button variant="outline" onClick={() => { onClose(); onManageAccess(); }}>Manage approver access</Button>}</div>}
       {p.prepared && <details className="transaction-details" open={p.status === "awaiting_approval"}><summary>Unsigned transaction</summary><dl className="transaction-grid">
         <div className="wide"><dt>Token</dt><dd className="mono break-address">{p.token}</dd></div>
         <div className="wide"><dt>Signer</dt><dd className="mono break-address">{p.signer}</dd></div>

@@ -27,6 +27,7 @@ export default function App() {
   const [pending, setPending] = useState<Set<string>>(new Set());
   const inflight = useRef(new Set<string>());
   const [notice, setNotice] = useState<{ text: string; error: boolean }>();
+  const [decisionError, setDecisionError] = useState<{ id: string; message: string }>();
   const [amount, setAmount] = useState("1");
   const [approverToken, setApproverToken] = useState(getApproverToken);
   const [tokenDraft, setTokenDraft] = useState("");
@@ -59,7 +60,8 @@ export default function App() {
   };
   const decide = (proposal: Proposal, decision: "approve" | "reject") => {
     if (decision === "approve" && state?.mode === "live" && !window.confirm(`Approve a real ${usd(proposal.amountUsd)} buy of ${tokenLabel(proposal)} on Base mainnet?`)) return;
-    void act(`decision:${proposal.id}`, `/proposals/${encodeURIComponent(proposal.id)}/${decision}`, "POST", undefined, decision === "approve" ? "Approval submitted. Check the execution result below." : "Proposal rejected.");
+    setDecisionError(undefined);
+    void act(`decision:${proposal.id}`, `/proposals/${encodeURIComponent(proposal.id)}/${decision}`, "POST", undefined, decision === "approve" ? "Approval submitted. Check the execution result below." : "Proposal rejected.", message => setDecisionError({ id: proposal.id, message }));
   };
   const scan = () => {
     if (state?.mode === "live" && !state.policy.requireApproval && !window.confirm("Scan may propose and execute a live buy automatically. Continue?")) return;
@@ -115,7 +117,7 @@ export default function App() {
         {!state.apiConfigured && <div className="config-banner"><ShieldCheck size={15} /><span>o1 API is not configured. You can browse and screen launches; preparing a buy will show a configuration error.</span></div>}
         <div id="panel-proposals" role="tabpanel" aria-labelledby="tab-proposals" hidden={tab !== "proposals"} key={`proposals-${resetEpoch}`}>
           <div className="terminal-context"><span>Spent today <strong>{usd(state.spentTodayUsd)} / {usd(state.policy.maxPerDayUsd)}</strong></span><span>Per trade <strong>{usd(state.policy.maxPerTradeUsd)}</strong></span><span>Approval <strong>{state.policy.requireApproval ? "Required" : "Automatic"}</strong></span></div>
-          <Proposals proposals={state.proposals} tokens={state.tokens} mode={state.mode} killed={state.policy.killSwitch} connected={ready} authorized={authorized} pending={pending} onDecision={decide} onViewFeed={() => navigate("feed")} active={tab === "proposals"} />
+          <Proposals proposals={state.proposals} tokens={state.tokens} mode={state.mode} killed={state.policy.killSwitch} connected={ready} authorized={authorized} pending={pending} onDecision={decide} decisionError={decisionError} onManageAccess={() => { setEditingToken(true); requestAnimationFrame(() => document.getElementById("approver-token")?.focus()); }} onViewFeed={() => navigate("feed")} active={tab === "proposals"} />
         </div>
         <div id="panel-feed" role="tabpanel" aria-labelledby="tab-feed" hidden={tab !== "feed"}>
           <div className="terminal-context"><span>Indexer <strong className={state.indexerOk ? "positive" : "negative"}>{state.indexerOk ? "Connected" : "Offline"}</strong></span><span><strong>{state.tokens.length}</strong> launches</span></div>

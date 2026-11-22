@@ -85,6 +85,27 @@ describe("agent connection", () => {
 });
 
 describe("guarded actions", () => {
+  it.each([401, 503])("keeps a %s decision error visible inside the mobile dialog", async status => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    const state = fixture(); state.approverTokenRequired = true; state.proposals = [proposal()];
+    saveApproverToken("test-only-expired-token");
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => url === "/api/state" ? response(state) : response({ error: status === 401 ? "approver token required" : "Execution service unavailable" }, false, status)));
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: /Review TEST buy/ }));
+    const dialog = screen.getByRole("dialog", { name: "Review proposal" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Approve buy" }));
+    const error = await within(dialog).findByRole("alert");
+    expect(error.textContent).toContain(status === 401 ? "approver token required" : "Execution service unavailable");
+    if (status === 401) {
+      expect((within(dialog).getByRole("button", { name: "Approve buy" }) as HTMLButtonElement).disabled).toBe(true);
+      fireEvent.click(within(dialog).getByRole("button", { name: "Manage approver access" }));
+      expect(screen.queryByRole("dialog")).toBeNull();
+      await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText("Approver token")));
+    } else {
+      await waitFor(() => expect((within(dialog).getByRole("button", { name: "Approve buy" }) as HTMLButtonElement).disabled).toBe(false));
+    }
+  });
+
   it("keeps kill-switch state truthful after another client releases it", async () => {
     let state = fixture(); state.policy.killSwitch = false;
     const fetcher = vi.fn(async (url: string) => {
