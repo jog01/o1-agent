@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { LockKeyhole, Settings2, SlidersHorizontal } from "lucide-react";
 import type { Policy, Rules } from "../types";
+import { shortAddress } from "../lib/utils";
 import { Button } from "./ui/button";
 
 type Field = { key: string; label: string; min: number; max?: number; step?: number; hint?: string };
@@ -39,6 +40,7 @@ function SettingsForm({ kind, value, disabled, busy, onSave }: {
   const fields = kind === "policy" ? policyFields : ruleFields;
   const values = value as unknown as Record<string, number | string[] | boolean>;
   const fieldValue = (key: string): string | boolean => edits[key] ?? (key === "maxSniperShare" ? Number(values[key]) * 100 : Array.isArray(values[key]) ? (values[key] as string[]).join("\n") : values[key]) as string | boolean;
+  const contracts = kind === "policy" ? [...new Set(String(fieldValue("allowedTargets")).split(/[\s,]+/).filter(Boolean))] : [];
   const edit = (key: string, next: string | boolean) => setEdits(prev => ({ ...prev, [key]: next }));
   const dirty = Object.keys(edits).length > 0;
   const submit = async (event: FormEvent) => {
@@ -70,7 +72,7 @@ function SettingsForm({ kind, value, disabled, busy, onSave }: {
       {fields.map(field => <label className="form-field" key={field.key}><span>{field.label}</span><input type="number" name={field.key} min={field.min} max={field.max} step={field.step ?? 1} required value={String(fieldValue(field.key))} onChange={e => edit(field.key, e.target.value)} disabled={disabled || busy} />{field.hint && <small className="muted">{field.hint}</small>}</label>)}
       {kind === "policy" && <>
         <div className="fixed-chain"><span className="muted">Allowed chain</span><span>Base <span className="mono muted">8453</span></span></div>
-        <label className="form-field"><span>Allowed contracts</span><textarea rows={3} spellCheck={false} value={String(fieldValue("allowedTargets"))} onChange={e => edit("allowedTargets", e.target.value)} disabled={disabled || busy} /><small className="muted">One address per line. Empty blocks every contract.</small></label>
+        <details className="contract-details"><summary><span>Allowed contracts</span><span className="contract-count">{contracts.length} {contracts.length === 1 ? "contract" : "contracts"}</span>{contracts[0] && <span className="contract-preview mono muted">{shortAddress(contracts[0])}{contracts.length > 1 ? ` +${contracts.length - 1}` : ""}</span>}</summary><label className="form-field"><span className="sr-only">Allowed contracts</span><textarea rows={3} spellCheck={false} value={String(fieldValue("allowedTargets"))} onChange={e => edit("allowedTargets", e.target.value)} disabled={disabled || busy} /><small className="muted">One address per line. Empty blocks every contract.</small></label></details>
         <details className="token-lists"><summary>Token allow / deny lists</summary>{[["tokenAllowlist", "Token allowlist"], ["tokenDenylist", "Token denylist"]].map(([key, label]) => <label className="form-field" key={key}><span>{label}</span><textarea rows={2} spellCheck={false} value={String(fieldValue(key))} onChange={e => edit(key, e.target.value)} disabled={disabled || busy} /></label>)}<p className="muted text-xs">An empty allowlist allows tokens that pass screening.</p></details>
         <label className="toggle-field"><span><strong>Require approval</strong><small>You review before signing</small></span><input type="checkbox" role="switch" checked={Boolean(fieldValue("requireApproval"))} onChange={e => edit("requireApproval", e.target.checked)} disabled={disabled || busy} /></label>
         <label className="toggle-field"><span><strong>Auto-propose</strong><small>Queue new launches that pass</small></span><input type="checkbox" role="switch" checked={Boolean(fieldValue("autoPropose"))} onChange={e => edit("autoPropose", e.target.checked)} disabled={disabled || busy} /></label>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, ClipboardList, ExternalLink, ShieldCheck, X } from "lucide-react";
 import type { AgentState, Proposal } from "../types";
-import { shortAddress, usd, weiToEth } from "../lib/utils";
+import { tokenLabel, usd, weiToEth } from "../lib/utils";
 import { Button } from "./ui/button";
 
 const labels: Record<Proposal["status"], string> = { preparing: "Preparing", awaiting_approval: "Awaiting approval", blocked: "Blocked", rejected: "Rejected", executing: "Executing", filled: "Filled", failed: "Failed" };
@@ -21,7 +21,7 @@ export default function Proposals({ proposals, mode, killed, connected, authoriz
       const busy = pending.has(`decision:${p.id}`);
       const passedFirewall = p.prepared && !p.violations.length && ["awaiting_approval", "executing", "filled"].includes(p.status);
       return <article className={`proposal-card proposal-${p.status}`} key={p.id}>
-        <div className="proposal-heading"><div><span className="eyebrow">BUY</span><strong>{p.symbol || shortAddress(p.token)}</strong><span className="muted text-xs">{p.source}</span></div><span className={`status-pill status-${p.status}`}>{labels[p.status]}</span></div>
+        <div className="proposal-heading"><div><span className="eyebrow">BUY</span><strong>{tokenLabel(p)}</strong><span className="muted text-xs">{p.source}</span></div><span className={`status-pill status-${p.status}`}>{labels[p.status]}</span></div>
         <div className="proposal-amount"><strong>{usd(p.amountUsd)}</strong><span>{p.amountEth} ETH</span><time className="muted" dateTime={new Date(p.createdAt).toISOString()}>{new Date(p.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</time></div>
         {p.prepared && <details className="transaction-details" open={p.status === "awaiting_approval"}><summary>Unsigned transaction <span className="muted">· inspect before approving</span></summary><dl className="transaction-grid"><div className="wide"><dt>Contract · to</dt><dd className="mono break-address">{p.prepared.to}</dd></div><div><dt>Value</dt><dd>{weiToEth(p.prepared.valueWei)} ETH</dd></div><div><dt>Gas limit</dt><dd>{p.prepared.gas}</dd></div><div><dt>Nonce</dt><dd>{p.prepared.nonce}</dd></div><div><dt>Chain</dt><dd>{p.prepared.chainId}</dd></div></dl></details>}
         {passedFirewall && <p className="firewall-line positive"><ShieldCheck size={13} />Firewall: passed<span className="muted">Chain · contract · value · nonce</span></p>}

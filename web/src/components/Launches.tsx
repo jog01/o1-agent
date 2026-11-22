@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight, ExternalLink, Radio, Search } from "lucide-react";
 import type { Token } from "../types";
-import { age } from "../lib/utils";
+import { age, shortAddress, tokenLabel } from "../lib/utils";
 import { Button } from "./ui/button";
 
-export default function Launches({ tokens, disabled, pending, onPropose }: {
-  tokens: Token[]; disabled: boolean; pending: Set<string>; onPropose: (token: Token) => void;
+export default function Launches({ tokens, disabled, pending, onPropose, buyControls }: {
+  tokens: Token[]; disabled: boolean; pending: Set<string>; onPropose: (token: Token) => void; buyControls?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const [onlyPassing, setOnlyPassing] = useState(false);
   const filtered = tokens.filter(t => (!onlyPassing || t.screen.pass) && `${t.symbol} ${t.name} ${t.token}`.toLowerCase().includes(query.toLowerCase()));
   return <section className="panel launches-panel" aria-labelledby="launches-heading">
-    <header className="panel-header">
+    <header className="panel-header launch-header">
       <div className="panel-title"><Radio size={15} /><h2 id="launches-heading">Launchpad feed</h2><span className="count-badge">{tokens.length}</span></div>
-      <span className="muted text-xs">Base · on-chain</span>
+      {buyControls}
     </header>
     <div className="table-toolbar">
       <label className="search-field"><Search size={14} /><span className="sr-only">Search launches</span><input placeholder="Search launches" value={query} onChange={e => setQuery(e.target.value)} /></label>
@@ -35,12 +35,16 @@ export default function Launches({ tokens, disabled, pending, onPropose }: {
 
 function LaunchRow({ token: t, expanded, disabled, onExpand, onPropose }: { token: Token; expanded: boolean; disabled: boolean; onExpand: () => void; onPropose: () => void }) {
   const detailId = `screen-${t.token}`;
+  const label = tokenLabel(t);
+  const symbol = t.symbol?.trim();
+  const name = t.name?.trim();
+  const avatar = (symbol || name || t.token.slice(2)).slice(0, 2).toUpperCase();
   return <><tr className={expanded ? "is-expanded" : undefined}>
-    <td><div className="token-cell"><button className="expand-button" onClick={onExpand} aria-expanded={expanded} aria-controls={detailId} aria-label={`${expanded ? "Hide" : "Show"} ${t.symbol || "token"} safety checks`}>{expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</button>
-      <span className="token-avatar" aria-hidden="true">{(t.symbol || "?").slice(0, 2)}</span><div><a className="token-symbol" href={`https://basescan.org/token/${t.token}`} target="_blank" rel="noreferrer">{t.symbol || "Unknown"}<ExternalLink size={10} /></a><div className="token-name" title={t.name}>{t.name || "Unnamed token"} <span className="suite-label">{t.suite}</span></div></div></div></td>
+    <td><div className="token-cell"><button className="expand-button" onClick={onExpand} aria-expanded={expanded} aria-controls={detailId} aria-label={`${expanded ? "Hide" : "Show"} ${label} safety checks`}>{expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</button>
+      <span className="token-avatar" aria-hidden="true">{avatar}</span><div><a className="token-symbol" href={`https://basescan.org/token/${t.token}`} target="_blank" rel="noreferrer">{label}<ExternalLink size={10} /></a><div className="token-name" title={name || t.token}>{symbol && name ? name : shortAddress(t.token)} <span className="suite-label">{t.suite}</span></div></div></div></td>
     <td className="muted">{age(t.launched_ts)}</td><td className="numeric">{t.trades.toLocaleString()}</td><td className="numeric">{t.unique_traders.toLocaleString()}</td>
     <td className="numeric">{t.unique_traders ? `${Math.round(t.first_minute_traders / t.unique_traders * 100)}%` : "—"}</td>
     <td><button className={`status-pill ${t.screen.pass ? "status-positive" : "status-negative"}`} onClick={onExpand} aria-expanded={expanded} aria-controls={detailId}>{t.screen.pass ? "Pass" : "Fail"} · {t.screen.checks.filter(c => c.pass).length}/5</button></td>
-    <td><Button variant="outline" size="sm" disabled={disabled} onClick={onPropose}>Propose buy</Button></td>
+    <td className="launch-actions">{t.screen.pass && <Button variant="outline" size="sm" disabled={disabled} onClick={onPropose}>Propose buy</Button>}</td>
   </tr><tr hidden={!expanded} id={detailId} className="screen-row"><td colSpan={7}><div className="screen-checks">{t.screen.checks.map(check => <div key={check.id} className="screen-check"><span className={check.pass ? "positive" : "negative"}>{check.pass ? "PASS" : "FAIL"}</span><span>{check.label}</span><strong>{check.value}</strong><span className="muted">limit {check.limit}</span></div>)}</div></td></tr></>;
 }

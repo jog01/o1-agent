@@ -4,6 +4,7 @@ import { twMerge } from "tailwind-merge";
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 export const usd = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(value);
 export const shortAddress = (value: string) => value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "Not configured";
+export const tokenLabel = (token: { symbol?: string; name?: string; token: string }) => token.symbol?.trim() || token.name?.trim() || shortAddress(token.token);
 export function weiToEth(value: string) {
   try {
     const wei = BigInt(value);

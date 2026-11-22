@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Activity, ArrowRight, CheckCircle2, Circle, ExternalLink, LoaderCircle, Power, RefreshCw, ShieldCheck, WifiOff, X } from "lucide-react";
 import { ApiError, getApproverToken, request, saveApproverToken, useAgent } from "./api";
 import type { AgentState, Proposal, Token } from "./types";
-import { cn, shortAddress, usd } from "./lib/utils";
+import { cn, shortAddress, tokenLabel, usd } from "./lib/utils";
 import { Button } from "./components/ui/button";
 import Launches from "./components/Launches";
 import Proposals from "./components/Proposals";
@@ -38,11 +38,11 @@ export default function App() {
   const propose = (token: Token) => {
     const amountUsd = Number(amount);
     if (!amount.trim() || !Number.isFinite(amountUsd) || amountUsd < 0.01 || Math.abs(amountUsd * 100 - Math.round(amountUsd * 100)) > 1e-8) { setNotice({ text: "Enter a buy amount of at least $0.01, in whole cents.", error: true }); return; }
-    if (state?.mode === "live" && !state.policy.requireApproval && !window.confirm(`Propose ${usd(amountUsd)} of ${token.symbol}? Approval is disabled: this can spend real money immediately.`)) return;
+    if (state?.mode === "live" && !state.policy.requireApproval && !window.confirm(`Propose ${usd(amountUsd)} of ${tokenLabel(token)}? Approval is disabled: this can spend real money immediately.`)) return;
     void act(`propose:${token.token}`, "/proposals", "POST", { token: token.token, amountUsd });
   };
   const decide = (proposal: Proposal, decision: "approve" | "reject") => {
-    if (decision === "approve" && state?.mode === "live" && !window.confirm(`Approve a real ${usd(proposal.amountUsd)} buy of ${proposal.symbol} on Base mainnet?`)) return;
+    if (decision === "approve" && state?.mode === "live" && !window.confirm(`Approve a real ${usd(proposal.amountUsd)} buy of ${tokenLabel(proposal)} on Base mainnet?`)) return;
     void act(`decision:${proposal.id}`, `/proposals/${encodeURIComponent(proposal.id)}/${decision}`, "POST", undefined, decision === "approve" ? "Approval submitted. Check the execution result below." : "Proposal rejected.");
   };
   const scan = () => {
@@ -64,7 +64,7 @@ export default function App() {
     {!connected && state && <div className="connection-banner" role="alert">Agent connection lost. Displaying the last snapshot; trading controls are disabled until reconnect.</div>}
     {state && !state.policy.requireApproval && <div className="approval-banner" role="status">Human approval is disabled. Proposals can execute automatically within your policy limits.</div>}
     <main id="main" className="dashboard">
-      <div className="page-heading"><div><div className="eyebrow">O1 LAUNCHPAD / BASE</div><h1>Watch the launch. Guard the trade.</h1><p>A live on-chain feed. A hard policy. You stay in control.</p></div><Button disabled={!state || !connected || !authorized || state.policy.killSwitch || pending.has("scan")} onClick={scan}><RefreshCw size={14} className={pending.has("scan") ? "animate-spin" : undefined} />{pending.has("scan") ? "Scanning…" : "Scan now"}</Button></div>
+      <div className="page-heading"><h1>Base agent</h1><Button disabled={!state || !connected || !authorized || state.policy.killSwitch || pending.has("scan")} onClick={scan}><RefreshCw size={14} className={pending.has("scan") ? "animate-spin" : undefined} />{pending.has("scan") ? "Scanning…" : "Scan now"}</Button></div>
       {notice && <div className={cn("notice", notice.error && "notice-error")} role={notice.error ? "alert" : "status"}><span>{notice.text}</span><Button variant="ghost" size="icon" onClick={() => setNotice(undefined)} aria-label="Dismiss message"><X size={14} /></Button></div>}
       {(state?.approverTokenRequired || editingToken) && <section className="approver-panel panel" aria-label="Approver access">{!approverToken || editingToken ? <form className="approver-form" onSubmit={event => {
         event.preventDefault(); const token = tokenDraft.trim(); if (!token) return;
@@ -74,9 +74,8 @@ export default function App() {
         <Metrics state={state} />
         {!state.apiConfigured && <div className="config-banner"><ShieldCheck size={15} /><span>o1 API is not configured. You can browse and screen launches; preparing a buy will show a configuration error.</span></div>}
         <div className="workspace"><div className="main-column">
-          <div className="feed-controls"><span className="muted">Manual proposals</span><label>Buy amount <span className="amount-input"><span>$</span><input type="number" min="0.01" step="0.01" required aria-label="Buy amount in USD" value={amount} onChange={e => setAmount(e.target.value)} disabled={!connected} /></span></label><span className="muted">Policy cap {usd(state.policy.maxPerTradeUsd)}</span></div>
-          <Launches tokens={state.tokens} disabled={!connected || state.policy.killSwitch} pending={pending} onPropose={propose} />
           <Proposals proposals={state.proposals} mode={state.mode} killed={state.policy.killSwitch} connected={connected} authorized={authorized} pending={pending} onDecision={decide} />
+          <Launches tokens={state.tokens} disabled={!connected || state.policy.killSwitch} pending={pending} onPropose={propose} buyControls={<div className="feed-controls"><label>Buy amount <span className="amount-input"><span>$</span><input type="number" min="0.01" step="0.01" required aria-label="Buy amount in USD" value={amount} onChange={e => setAmount(e.target.value)} disabled={!connected} /></span></label><span className="muted">Max {usd(state.policy.maxPerTradeUsd)}</span></div>} />
           <ActivityLog lines={state.log} />
         </div><Settings policy={state.policy} rules={state.rules} disabled={!connected || !authorized} pending={pending} onSave={(path, patch) => act(path, `/${path}`, "PATCH", patch, `${path === "policy" ? "Trading policy" : "Safety rules"} saved.`)} /></div>
       </>}
