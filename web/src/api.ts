@@ -41,26 +41,30 @@ export function useAgent() {
     let streaming = false;
     let heartbeat = 0;
     let revision = 0;
-    let requestId = 0;
+    let pendingPoll: Promise<void> | undefined;
     const controller = new AbortController();
     const accept = (next: AgentState) => {
       if (disposed) return;
       setState(previous => ({ ...next, approverTokenRequired: next.approverTokenRequired ?? previous?.approverTokenRequired }));
       setLastUpdate(Date.now());
     };
-    const poll = async () => {
-      const startedRevision = revision;
-      const id = ++requestId;
-      try {
-        const next = await request<AgentState>("/state", "GET", undefined, AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]));
-        if (disposed || id !== requestId || startedRevision !== revision) return;
-        accept(next);
-        setConnection(streaming ? "live" : "polling");
-      } catch {
-        if (!disposed && id === requestId && !streaming) setConnection("disconnected");
-      }
+    const poll = (): Promise<void> => {
+      if (pendingPoll) return pendingPoll;
+      const run = async () => {
+        const startedRevision = revision;
+        try {
+          const next = await request<AgentState>("/state", "GET", undefined, AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]));
+          if (disposed || startedRevision !== revision) return;
+          accept(next);
+          setConnection(streaming ? "live" : "polling");
+        } catch {
+          if (!disposed && !streaming) setConnection("disconnected");
+        }
+      };
+      pendingPoll = run().finally(() => { pendingPoll = undefined; });
+      return pendingPoll;
     };
-    refreshRef.current = poll;
+    refreshRef.current = async () => { await pendingPoll; if (!disposed) await poll(); };
     void poll();
     if (typeof EventSource !== "undefined") {
       source = new EventSource("/api/events");

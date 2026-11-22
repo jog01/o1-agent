@@ -62,6 +62,17 @@ describe("agent connection", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+
+  it("accepts a six-second snapshot instead of invalidating it every five seconds", async () => {
+    vi.useFakeTimers(); vi.stubGlobal("EventSource", undefined);
+    const fetcher = vi.fn(() => new Promise<Response>(resolve => setTimeout(() => resolve(response(fixture())), 6_000)));
+    vi.stubGlobal("fetch", fetcher);
+    const { result } = renderHook(() => useAgent());
+    await act(async () => { await vi.advanceTimersByTimeAsync(6_000); });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(result.current.connection).toBe("polling");
+    expect(result.current.state?.tokens.length).toBeGreaterThan(0);
+  });
 });
 
 describe("guarded actions", () => {
