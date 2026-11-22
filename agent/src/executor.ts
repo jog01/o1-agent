@@ -39,7 +39,7 @@ export async function walletNonce(addr: Address): Promise<number> {
 }
 
 /** Re-forks Base at the latest block so the fork matches the state o1 quoted against. */
-async function freshFork(): Promise<number> {
+export async function freshFork(): Promise<number> {
   await forkTest.reset({ jsonRpcUrl: config.baseRpcUrl });
   return Number(await forkPublic.getBlockNumber());
 }
