@@ -1,5 +1,5 @@
 /* Opt-in Sequa workspace. Import after index.css + brand.css; see visual handoff. */
-.tabbed-shell [hidden], .tabbed-shell dialog.proposal-detail:not([open]) { display: none !important; }
+.tabbed-shell [hidden], .tabbed-shell dialog:not([open]) { display: none !important; }
 .tabbed-shell .topbar { position: sticky; top: 0; z-index: 30; min-height: 72px; }
 .tabbed-shell .terminal-tabs { align-self: stretch; display: flex; align-items: stretch; gap: 24px; margin-inline: auto; }
 .tabbed-shell .terminal-tab { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 7px; color: var(--o1-muted); text-decoration: none; font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -62,6 +62,40 @@
 .tabbed-shell .demo-reset-copy { color: var(--o1-muted); font-size: 12px; line-height: 1.8; }
 .tabbed-shell .demo-reset-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 .tabbed-shell .activity-panel .log-line { overflow-wrap: anywhere; }
+
+/* Single navigation DOM stays keyboard-accessible across the responsive switch. */
+.tabbed-shell .app-navbar { height: 72px; padding-block: 0; flex-wrap: nowrap; }
+.tabbed-shell .primary-nav { display: flex; align-self: stretch; margin-inline: auto; }
+.tabbed-shell .navbar-actions { display: flex; align-items: center; gap: 14px; }
+.tabbed-shell .nav-tab > svg, .tabbed-shell .kill-label-compact { display: none; }
+.tabbed-shell .connection-label { display: flex; align-items: center; gap: 7px; color: #7bcda7; font-size: 11px; white-space: nowrap; }
+.tabbed-shell .connection-label.negative { color: var(--o1-muted); }
+.tabbed-shell .account-menu > summary { display: flex; align-items: center; justify-content: center; width: 32px; height: 36px; list-style: none; cursor: pointer; border-radius: 6px; color: var(--o1-muted); }
+.tabbed-shell .account-menu > summary::-webkit-details-marker { display: none; }
+.tabbed-shell .account-menu > summary:hover { color: var(--o1-text); background: var(--o1-raised); }
+.tabbed-shell .account-menu-heading { display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; font-size: 12px; }
+.tabbed-shell .account-menu-heading > span { font-size: 10px; }
+.tabbed-shell .account-menu-details { margin: 0; padding: 0 10px 8px; font-size: 11px; }
+.tabbed-shell .account-menu-details > div { display: flex; justify-content: space-between; gap: 12px; padding-block: 8px; }
+.tabbed-shell .account-menu-details dt { color: var(--o1-muted); }
+.tabbed-shell .account-menu-details dd { margin: 0; }
+.tabbed-shell .terminal-menu-panel button:disabled { opacity: .4; }
+.tabbed-shell dialog::backdrop { background: #0009; }
+.tabbed-shell .proposal-detail.is-modal { margin: 0 0 0 auto; padding: 0; color: var(--o1-text); }
+.tabbed-shell .proposal-list { display: block; }
+.tabbed-shell .proposal-list > [role='listitem']:not(:last-child) .proposal-row { border-bottom: 1px solid var(--o1-border); }
+.tabbed-shell .proposal-row-meta { display: none; }
+.tabbed-shell .proposal-created { margin: 0 0 20px; font-size: 10px; }
+.tabbed-shell .proposal-detail-header h2 { outline: none; }
+.tabbed-shell .terminal-context strong.mono { overflow-wrap: anywhere; }
+.tabbed-shell .terminal-workspace > [role='tabpanel'] { outline: none; }
+.tabbed-shell .policy-page-grid { align-items: start; max-width: none; }
+.tabbed-shell .activity-list { max-height: calc(100dvh - 290px); min-height: 180px; }
+
+@media (max-width: 1200px) {
+  .tabbed-shell .navbar-actions { gap: 10px; }
+  .tabbed-shell .connection-text { display: none; }
+}
 @media (min-width: 1100px) {
   .tabbed-shell .proposal-workspace.has-selection { grid-template-columns: minmax(0, 1fr) 400px; }
   .tabbed-shell .proposal-workspace.has-selection .proposal-row { grid-template-columns: minmax(0, 1fr) 84px 128px 56px 14px; gap: 12px; padding-inline: 16px; }
@@ -70,7 +104,14 @@
   .tabbed-shell .terminal-tabs { gap: 18px; }
 }
 @media (max-width: 900px) {
-  .tabbed-shell .topbar { min-height: 64px; }
+  .tabbed-shell .topbar { height: 64px; min-height: 64px; }
+  .tabbed-shell .primary-nav { margin: 0; }
+  .tabbed-shell .terminal-tabs.nav-tabs { position: fixed; inset: auto 0 0; z-index: 40; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; min-height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--o1-border); background: #0b0e12; }
+  .tabbed-shell .nav-tab.terminal-tab { flex-direction: column; gap: 5px; min-height: 52px; font-size: 10px; }
+  .tabbed-shell .nav-tab > svg { display: block; }
+  .tabbed-shell .nav-tab.terminal-tab[aria-current='page'] { border-radius: 7px; background: #14212d; }
+  .tabbed-shell .nav-tab.terminal-tab[aria-current='page']::after { display: none; }
+  .tabbed-shell .nav-count { position: absolute; top: 0; left: calc(50% + 7px); }
   .tabbed-shell .terminal-tabs { display: none; }
   .tabbed-shell .terminal-mobile-nav { position: fixed; inset: auto 0 0; z-index: 40; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); min-height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--o1-border); background: #0b0e12; }
   .tabbed-shell .terminal-mobile-nav .terminal-tab { flex-direction: column; gap: 5px; min-height: 52px; font-size: 10px; }
@@ -80,12 +121,22 @@
   .tabbed-shell .policy-page-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
+  .tabbed-shell .app-navbar { gap: 8px; padding-inline: 16px; }
+  .tabbed-shell .brand { gap: 10px; font-size: 14px; }
+  .tabbed-shell .brand-logo { width: 40px; height: auto; }
+  .tabbed-shell .brand-divider { height: 22px; }
+  .tabbed-shell .navbar-actions { margin-left: auto; gap: 8px; }
+  .tabbed-shell .kill-label { display: none; }
+  .tabbed-shell .kill-label-compact { display: inline; }
+  .tabbed-shell .kill-switch { padding-inline: 10px; gap: 6px; }
+  .tabbed-shell .nav-mode { padding-inline: 6px; font-size: 9px; }
   .tabbed-shell .terminal-workspace { padding-top: 24px; padding-inline: 16px; }
   .tabbed-shell .terminal-page-heading { margin-bottom: 16px; }
   .tabbed-shell .terminal-page-heading h1 { font-size: 20px; letter-spacing: -0.4px; }
   .tabbed-shell .terminal-context { gap: 8px 16px; font-size: 10px; padding-bottom: 16px; }
   .tabbed-shell .proposal-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; min-height: 88px; padding: 16px; }
   .tabbed-shell .proposal-row-token { grid-column: 1; grid-row: 1 / 3; gap: 10px; }
+  .tabbed-shell .proposal-row-meta { display: block; }
   .tabbed-shell .proposal-row-amount { grid-column: 2; grid-row: 1; text-align: right; }
   .tabbed-shell .proposal-row-amount > small { display: none; }
   .tabbed-shell .proposal-row-status { grid-column: 2; grid-row: 2; justify-self: end; }

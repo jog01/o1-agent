@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, ExternalLink, Radio, Search } from "lucide-r
 import type { Token } from "../types";
 import { age, shortAddress, tokenLabel } from "../lib/utils";
 import { Button } from "./ui/button";
+import TokenAvatar from "./TokenAvatar";
 
 export default function Launches({ tokens, disabled, pending, onPropose, buyControls }: {
   tokens: Token[]; disabled: boolean; pending: Set<string>; onPropose: (token: Token) => void; buyControls?: ReactNode;
@@ -41,10 +42,9 @@ function LaunchRow({ token: t, expanded, disabled, onExpand, onPropose }: { toke
   const label = tokenLabel(t);
   const symbol = t.symbol?.trim();
   const name = t.name?.trim();
-  const avatar = (symbol || name || t.token.slice(2)).slice(0, 2).toUpperCase();
   return <><tr className={expanded ? "is-expanded" : undefined}>
     <td><div className="token-cell"><button className="expand-button" onClick={onExpand} aria-expanded={expanded} aria-controls={detailId} aria-label={`${expanded ? "Hide" : "Show"} ${label} safety checks`}>{expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</button>
-      <span className="token-avatar" aria-hidden="true">{avatar}</span><div><a className="token-symbol" href={`https://basescan.org/token/${t.token}`} target="_blank" rel="noreferrer">{label}<ExternalLink size={10} /></a><div className="token-name" title={name || t.token}>{symbol && name ? name : shortAddress(t.token)} <span className="suite-label">{t.suite}</span></div></div></div></td>
+      <TokenAvatar {...t} /><div><a className="token-symbol" href={`https://basescan.org/token/${t.token}`} target="_blank" rel="noreferrer">{label}<ExternalLink size={10} /></a><div className="token-name" title={name || t.token}>{symbol && name ? name : shortAddress(t.token)} <span className="suite-label">{t.suite}</span></div></div></div></td>
     <td className="muted">{age(t.launched_ts)}</td><td className="numeric">{t.trades.toLocaleString()}</td><td className="numeric">{t.unique_traders.toLocaleString()}</td>
     <td className="numeric">{t.unique_traders ? `${Math.round(t.first_minute_traders / t.unique_traders * 100)}%` : "—"}</td>
     <td><button className={`status-pill ${t.screen.pass ? "status-positive" : "status-negative"}`} onClick={onExpand} aria-expanded={expanded} aria-controls={detailId}>{t.screen.pass ? "Pass" : "Fail"} · {t.screen.checks.filter(c => c.pass).length}/5</button></td>
