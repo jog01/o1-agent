@@ -20,7 +20,10 @@ export default function Launches({ tokens, disabled, pending, onPropose, buyCont
       <label className="search-field"><Search size={14} /><span className="sr-only">Search launches</span><input placeholder="Search launches" value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="check-control"><input type="checkbox" checked={onlyPassing} onChange={e => setOnlyPassing(e.target.checked)} />Passing only</label>
     </div>
-    <div className="table-scroll" tabIndex={0} role="region" aria-label="Launches table, scroll horizontally on small screens">
+    <div className="table-scroll" tabIndex={0} role="region" aria-label="Launches table, scroll horizontally on small screens" onFocusCapture={event => {
+      // Native focus can leave a partially visible control clipped in this scrollport.
+      if (event.target !== event.currentTarget) event.target.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }}>
       <table className="launches-table">
         <thead><tr><th scope="col">Token / suite</th><th scope="col">Age</th><th scope="col" className="numeric">Trades</th><th scope="col" className="numeric">Traders</th><th scope="col" className="numeric">First 60s</th><th scope="col">Screen</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
         <tbody>{filtered.map(token => <LaunchRow key={token.token} token={token} expanded={expanded.has(token.token)} disabled={disabled || pending.has(`propose:${token.token}`)} onExpand={() => setExpanded(prev => {
