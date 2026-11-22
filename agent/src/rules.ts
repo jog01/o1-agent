@@ -22,3 +22,18 @@ export function screen(t: IndexedToken, all: IndexedToken[], rules: Rules, nowSe
   ];
   return { pass: checks.every((c) => c.pass), checks };
 }
+
+const n = (v: unknown, name: string, min: number, max: number) => {
+  if (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max) throw new Error(`${name} must be a number between ${min} and ${max}`);
+  return v;
+};
+
+export function validateRules(r: Rules): Rules {
+  return {
+    minUniqueTraders: n(r.minUniqueTraders, "minUniqueTraders", 0, 1e6),
+    minTrades: n(r.minTrades, "minTrades", 0, 1e7),
+    maxSniperShare: n(r.maxSniperShare, "maxSniperShare", 0, 1),
+    maxCreatorLaunches: n(r.maxCreatorLaunches, "maxCreatorLaunches", 1, 1e4),
+    maxAgeHours: n(r.maxAgeHours, "maxAgeHours", 0, 24 * 365),
+  };
+}

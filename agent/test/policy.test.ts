@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkIntent, checkPrepared, defaultPolicy } from "../src/policy.js";
+import { validatePolicy, checkIntent, checkPrepared, defaultPolicy } from "../src/policy.js";
 import type { PreparedTx } from "../src/types.js";
 
 const token = "0xb200000000000000000000531df9adf3d948f601" as const;
@@ -28,4 +28,15 @@ describe("checkPrepared", () => {
   it("refuses more value than approved", () => expect(checkPrepared(defaultPolicy, tx, signer, 1n).join()).toMatch(/more than the approved/));
   it("refuses the wrong chain", () => expect(checkPrepared(defaultPolicy, { ...tx, chainId: 1 }, signer, 300000000000000n).join()).toMatch(/chain 1/));
   it("refuses a nonce mismatch", () => expect(checkPrepared(defaultPolicy, tx, signer, 300000000000000n, 8).join()).toMatch(/nonce/));
+});
+
+describe("validatePolicy", () => {
+  it("accepts the defaults", () => expect(validatePolicy(defaultPolicy)).toEqual(defaultPolicy));
+  it("rejects negative or non-finite caps", () => {
+    expect(() => validatePolicy({ ...defaultPolicy, maxPerTradeUsd: -1 })).toThrow();
+    expect(() => validatePolicy({ ...defaultPolicy, maxPerDayUsd: Infinity })).toThrow();
+    expect(() => validatePolicy({ ...defaultPolicy, maxSlippageBps: "500" as any })).toThrow();
+  });
+  it("rejects malformed lists", () => expect(() => validatePolicy({ ...defaultPolicy, allowedTargets: ["nope"] as any })).toThrow());
+  it("pins the chain to Base", () => expect(validatePolicy({ ...defaultPolicy, allowedChainIds: [1] }).allowedChainIds).toEqual([8453]));
 });

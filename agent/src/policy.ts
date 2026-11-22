@@ -58,3 +58,32 @@ export function checkPrepared(p: Policy, tx: PreparedTx, signer: Address, maxVal
   void signer;
   return v;
 }
+
+const num = (v: unknown, name: string, min: number, max = Infinity) => {
+  if (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max) throw new Error(`${name} must be a number between ${min} and ${max}`);
+  return v;
+};
+const addrs = (v: unknown, name: string) => {
+  if (!Array.isArray(v) || !v.every((a) => typeof a === "string" && /^0x[0-9a-fA-F]{40}$/.test(a))) throw new Error(`${name} must be a list of addresses`);
+  return v as Address[];
+};
+const bool = (v: unknown, name: string) => {
+  if (typeof v !== "boolean") throw new Error(`${name} must be true or false`);
+  return v;
+};
+
+/** Rejects malformed or unsafe policy values instead of silently weakening a limit. */
+export function validatePolicy(p: Policy): Policy {
+  return {
+    maxPerTradeUsd: num(p.maxPerTradeUsd, "maxPerTradeUsd", 0, 1000),
+    maxPerDayUsd: num(p.maxPerDayUsd, "maxPerDayUsd", 0, 10_000),
+    maxSlippageBps: num(p.maxSlippageBps, "maxSlippageBps", 0, 5000),
+    allowedChainIds: [BASE_CHAIN_ID],
+    allowedTargets: addrs(p.allowedTargets, "allowedTargets"),
+    tokenAllowlist: addrs(p.tokenAllowlist, "tokenAllowlist"),
+    tokenDenylist: addrs(p.tokenDenylist, "tokenDenylist"),
+    requireApproval: bool(p.requireApproval, "requireApproval"),
+    autoPropose: bool(p.autoPropose, "autoPropose"),
+    killSwitch: bool(p.killSwitch, "killSwitch"),
+  };
+}

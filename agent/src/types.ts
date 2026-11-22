@@ -98,6 +98,9 @@ export interface Proposal {
   gasUsed?: string;
   tokensReceived?: string;
   error?: string;
+  executedAt?: number;
+  /** Set once a transaction was sent, so spend is counted even if the outcome is unknown. */
+  spent?: boolean;
 }
 
 export interface LogLine {

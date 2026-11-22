@@ -25,7 +25,7 @@ export interface ExecResult {
   status: "success" | "reverted";
   gasUsed: string;
   forkBlock?: number;
-  tokensReceived: string;
+  tokensReceived?: string;
 }
 
 export function signerAddress(): Address {
@@ -44,16 +44,18 @@ async function freshFork(): Promise<number> {
   return Number(await forkPublic.getBlockNumber());
 }
 
-async function balanceOf(client: typeof forkPublic, token: Address, owner: Address) {
-  return client.readContract({ address: token, abi: erc20Abi, functionName: "balanceOf", args: [owner] });
+async function balanceOf(client: typeof forkPublic, token: Address, owner: Address): Promise<bigint | undefined> {
+  return client.readContract({ address: token, abi: erc20Abi, functionName: "balanceOf", args: [owner] }).catch(() => undefined);
 }
+
+const delta = (before?: bigint, after?: bigint) => (before === undefined || after === undefined ? undefined : (after - before).toString());
 
 /**
  * demo: replays the prepared transaction on a local Base fork from an impersonated funded address. No key, no money.
  * fork: signs the prepared transaction with the agent's own key and broadcasts the raw tx to the fork. No money.
  * live: signs and hands it to o1's /order/complete. Real money; needs LIVE_TRADING set.
  */
-export async function execute(tx: PreparedTx, token: Address): Promise<ExecResult> {
+export async function execute(tx: PreparedTx, token: Address, onSent: (hash: Hex) => void = () => {}): Promise<ExecResult> {
   if (tx.permit2) throw new Error("Permit2 orders (sells) are not supported by this executor yet");
   const signer = signerAddress();
   const unsigned = parseTransaction(tx.unsigned);
@@ -65,9 +67,11 @@ export async function execute(tx: PreparedTx, token: Address): Promise<ExecResul
     const signed = await account.signTransaction(unsigned as any);
     const res = await completeOrder(tx.orderId, [{ id: tx.txId, signed }]);
     const hash = res.transactions?.[0]?.hash as Hex;
+    if (!hash) throw new Error("o1 did not return a transaction hash");
+    onSent(hash);
     const rc = await mainnet.waitForTransactionReceipt({ hash, timeout: 120_000 });
     const after = await balanceOf(mainnet, token, signer);
-    return { txHash: hash, status: rc.status, gasUsed: rc.gasUsed.toString(), tokensReceived: (after - before).toString() };
+    return { txHash: hash, status: rc.status, gasUsed: rc.gasUsed.toString(), tokensReceived: delta(before, after) };
   }
 
   const forkBlock = await freshFork();
@@ -89,7 +93,8 @@ export async function execute(tx: PreparedTx, token: Address): Promise<ExecResul
     const signed = await account.signTransaction(unsigned as any);
     hash = await forkPublic.sendRawTransaction({ serializedTransaction: signed });
   }
+  onSent(hash);
   const rc = await forkPublic.waitForTransactionReceipt({ hash, timeout: 60_000 });
   const after = await balanceOf(forkPublic, token, signer);
-  return { txHash: hash, status: rc.status, gasUsed: rc.gasUsed.toString(), forkBlock, tokensReceived: (after - before).toString() };
+  return { txHash: hash, status: rc.status, gasUsed: rc.gasUsed.toString(), forkBlock, tokensReceived: delta(before, after) };
 }

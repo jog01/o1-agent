@@ -17,6 +17,8 @@ export const config = {
   /** fork/live: the agent's own wallet key. Never logged, never sent anywhere. */
   walletKey: (env.WALLET_PRIVATE_KEY ?? "") as Hex,
   /** live mode also requires this explicit second switch. */
+  /** Required in fork and live mode: approving, policy edits and turning the kill switch off need it. */
+  approverToken: env.APPROVER_TOKEN ?? "",
   liveTradingEnabled: env.LIVE_TRADING === "I_UNDERSTAND_THIS_SPENDS_REAL_MONEY",
   webDist: env.WEB_DIST ?? new URL("../../web/dist", import.meta.url).pathname,
   statePath: env.STATE_PATH ?? new URL("../../data/agent-state.json", import.meta.url).pathname,
