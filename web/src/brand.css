@@ -164,6 +164,7 @@ td { vertical-align: middle; }
 .launches-table .status-negative { color: var(--o1-muted); border-color: var(--o1-border); background: var(--o1-raised); }
 /* Keep the offscreen screen-reader table header inside this scrollport. */
 .table-scroll { position: relative; scrollbar-color: #424b59 #101318; }
+.launches-table :is(button, a) { scroll-margin-inline: 6px; }
 
 /* Touch actions stay visible; keyboard focus reveals the entire row action. */
 @media (hover: hover) and (pointer: fine) {
