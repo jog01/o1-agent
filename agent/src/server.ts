@@ -5,6 +5,7 @@ import { streamSSE } from "hono/streaming";
 import { isAddress, type Address } from "viem";
 import { Agent } from "./agent.js";
 import { config } from "./config.js";
+import { cachedImage } from "./metadata.js";
 
 const agent = new Agent();
 const app = new Hono();
@@ -21,6 +22,15 @@ const denied = (c: any) => c.json({ error: "approver token required" }, 401);
 
 app.get("/api/health", (c) => c.json({ ok: true, mode: config.mode, indexer: agent.indexerOk }));
 app.get("/api/state", (c) => c.json(agent.snapshot()));
+app.get("/api/token-image/:token", (c) => {
+  const img = cachedImage(c.req.param("token"));
+  if (!img) return c.notFound();
+  return c.body(img.body, 200, {
+    "Content-Type": img.type,
+    "Cache-Control": "public, max-age=86400",
+    "X-Content-Type-Options": "nosniff",
+  });
+});
 
 app.get("/api/events", (c) =>
   streamSSE(c, async (s) => {
