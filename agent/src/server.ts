@@ -52,7 +52,7 @@ app.post("/api/proposals", async (c) => {
     return fail(c, e);
   }
 });
-app.post("/api/scan", async (c) => c.json((await agent.scan()) ?? null));
+app.post("/api/scan", async (c) => (isApprover(c) ? c.json((await agent.scan()) ?? null) : denied(c)));
 app.post("/api/proposals/:id/approve", async (c) => {
   if (!isApprover(c)) return denied(c);
   try {

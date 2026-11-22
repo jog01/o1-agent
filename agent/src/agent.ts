@@ -48,6 +48,7 @@ export class Agent extends EventEmitter {
       this.proposals = s.proposals ?? [];
       for (const p of this.proposals)
         if (p.status === "executing" || p.status === "preparing") {
+          if (p.status === "executing") p.spent = true;
           p.status = "failed";
           p.error = `Interrupted by a restart while ${p.status}; check ${p.txHash ?? "the signer's history"} before retrying`;
         }
@@ -106,11 +107,11 @@ export class Agent extends EventEmitter {
       const fresh = !this.seen.has(key);
       this.seen.add(key);
       if (!this.primed) {
-        this.proposed.add(key);
+        if (t.screen.pass) this.proposed.add(key);
         continue;
       }
       if (fresh) this.say("info", `New launch: ${t.symbol || t.token} (${t.suite})`);
-      if (this.policy.autoPropose && t.screen.pass && !this.proposed.has(key)) {
+      if (this.policy.autoPropose && t.screen.pass && !this.proposed.has(key) && !this.proposals.some((p) => p.token.toLowerCase() === key)) {
         this.proposed.add(key);
         this.say("action", `${t.symbol} passed the safety screen, proposing a $${this.policy.maxPerTradeUsd} buy`);
         void this.propose(t.token, this.policy.maxPerTradeUsd, "agent");
@@ -219,7 +220,10 @@ export class Agent extends EventEmitter {
     this.changed();
     try {
       // One fork, one trade at a time: each execution resets the fork.
-      const run = this.queue.then(() => execute(p.prepared!, p.token, (hash) => { p.txHash = hash; p.spent = true; this.changed(); }));
+      const run = this.queue.then(() => {
+        if (this.policy.killSwitch) throw new Error("Kill switch turned on before this trade was sent");
+        return execute(p.prepared!, p.token, (hash) => { p.txHash = hash; p.spent = true; this.changed(); });
+      });
       this.queue = run.catch(() => {});
       const r = await run;
       p.txHash = r.txHash;
@@ -227,7 +231,10 @@ export class Agent extends EventEmitter {
       p.forkBlock = r.forkBlock;
       p.tokensReceived = r.tokensReceived === undefined ? undefined : formatUnits(BigInt(r.tokensReceived), 18);
       p.status = r.status === "success" ? "filled" : "failed";
-      if (r.status !== "success") p.error = "Transaction reverted";
+      if (r.status !== "success") {
+        p.error = "Transaction reverted";
+        p.spent = false;
+      }
       this.say(p.status === "filled" ? "action" : "warn", p.status === "filled" ? `Filled: received ${p.tokensReceived ? Number(p.tokensReceived).toLocaleString() : "an unknown amount of"} ${p.symbol}, gas ${r.gasUsed}` : `Reverted: ${p.symbol}`);
     } catch (e: any) {
       p.status = "failed";
