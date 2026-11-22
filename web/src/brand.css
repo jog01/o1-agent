@@ -173,7 +173,8 @@ td { vertical-align: middle; }
   .page-heading p { font-size: 11px; }
   .table-toolbar { flex-wrap: wrap; gap: 10px; }
   .search-field { min-width: 160px; }
-  .search-field input, .check-control { font-size: 11px; }
+  .check-control { font-size: 11px; }
+  .search-field input, .amount-input input { font-size: 16px; }
   .check-control { min-height: 28px; }
   .feed-controls > .muted:last-child { font-size: 10px; }
   .feed-controls { gap: 8px 12px; }
@@ -187,7 +188,6 @@ td { vertical-align: middle; }
   .button, .expand-button, .segmented-control button { min-height: 36px; }
   .expand-button { min-width: 28px; }
   .form-field input, .form-field textarea { min-height: 40px; font-size: 16px; }
-  .form-field textarea { font-size: 12px; }
   .app-footer { font-size: 10px; }
 }
 
