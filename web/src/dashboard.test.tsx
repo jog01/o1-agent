@@ -23,7 +23,7 @@ const proposal = (): Proposal => ({
   signer: "0x0000000000000000000000000000000000000001", source: "user", status: "awaiting_approval", violations: [],
   prepared: { to: "0x0000000000000000000000000000000000000002", valueWei: "300000000000000", gas: "180000", nonce: 1, chainId: 8453, dataBytes: 100 },
 });
-const response = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 400, json: async () => body }) as Response;
+const response = (body: unknown, ok = true, status = ok ? 200 : 400) => ({ ok, status, json: async () => body }) as Response;
 
 beforeEach(() => { vi.stubGlobal("EventSource", Stream); saveApproverToken(""); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
@@ -67,7 +67,7 @@ describe("agent connection", () => {
 describe("guarded actions", () => {
   it("unlocks protected actions with a saved token and re-locks after a 401", async () => {
     const state = fixture(); state.approverTokenRequired = true; state.proposals = [proposal()];
-    const fetcher = vi.fn(async (url: string, _options?: RequestInit) => url === "/api/state" ? response(state) : response({ error: "approver token required" }, false));
+    const fetcher = vi.fn(async (url: string, _options?: RequestInit) => url === "/api/state" ? response(state) : response({ error: "approver token required" }, false, 401));
     vi.stubGlobal("fetch", fetcher);
     render(<App />);
     const approve = await screen.findByRole("button", { name: "Approve buy" });
