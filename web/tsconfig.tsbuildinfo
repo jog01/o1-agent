@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/api.ts","./src/dashboard.test.tsx","./src/main.tsx","./src/types.ts","./src/components/Launches.tsx","./src/components/Proposals.tsx","./src/components/Settings.tsx","./src/components/ui/button.tsx","./src/lib/utils.ts","./vite.config.ts","./tailwind.config.ts"],"version":"5.9.3"}

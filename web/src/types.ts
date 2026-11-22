@@ -21,6 +21,7 @@ export interface Proposal {
   tokensReceived?: string; gasUsed?: string; forkBlock?: number; txHash?: string;
 }
 export interface AgentState {
+  approverTokenRequired?: boolean;
   mode: "demo" | "fork" | "live"; signer: string; indexerOk: boolean; apiConfigured: boolean;
   spentTodayUsd: number; policy: Policy; rules: Rules; tokens: Token[]; proposals: Proposal[];
   log: { ts: number; level: "info" | "warn" | "action"; msg: string }[];

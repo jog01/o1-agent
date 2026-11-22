@@ -5,9 +5,9 @@ import { shortAddress, usd, weiToEth } from "../lib/utils";
 import { Button } from "./ui/button";
 
 const labels: Record<Proposal["status"], string> = { preparing: "Preparing", awaiting_approval: "Awaiting approval", blocked: "Blocked", rejected: "Rejected", executing: "Executing", filled: "Filled", failed: "Failed" };
-export default function Proposals({ proposals, mode, killed, connected, pending, onDecision }: {
+export default function Proposals({ proposals, mode, killed, connected, authorized = true, pending, onDecision }: {
   proposals: Proposal[]; mode: AgentState["mode"]; killed: boolean; connected: boolean;
-  pending: Set<string>; onDecision: (proposal: Proposal, decision: "approve" | "reject") => void;
+  authorized?: boolean; pending: Set<string>; onDecision: (proposal: Proposal, decision: "approve" | "reject") => void;
 }) {
   const [filter, setFilter] = useState<"all" | "pending">("all");
   const [limit, setLimit] = useState(10);
@@ -28,7 +28,7 @@ export default function Proposals({ proposals, mode, killed, connected, pending,
         {!!p.violations.length && <ul className="violations" aria-label="Policy violations">{p.violations.map((v, i) => <li key={i}>{v}</li>)}</ul>}
         {p.error && <p className="proposal-error negative">{p.error}</p>}
         {p.status === "filled" && <div className="fill-details"><dl className="transaction-grid"><div><dt>Tokens received</dt><dd>{p.tokensReceived ?? "—"}</dd></div><div><dt>Gas used</dt><dd>{p.gasUsed ?? "—"}</dd></div>{p.forkBlock !== undefined && <div><dt>Fork block</dt><dd>{p.forkBlock.toLocaleString()}</dd></div>}</dl>{p.txHash && <div className="transaction-hash"><span>{mode === "live" ? "Base transaction" : "Fork tx · not on BaseScan"}</span>{mode === "live" ? <a href={`https://basescan.org/tx/${p.txHash}`} target="_blank" rel="noreferrer" className="mono break-address">{p.txHash}<ExternalLink size={11} /></a> : <code className="break-address">{p.txHash}</code>}</div>}</div>}
-        {p.status === "awaiting_approval" && <div className="proposal-actions"><Button disabled={!connected || killed || busy || !passedFirewall} onClick={() => onDecision(p, "approve")}><Check size={14} />{busy ? "Submitting…" : mode === "live" ? "Approve live buy" : "Approve buy"}</Button><Button variant="outline" disabled={!connected || busy} onClick={() => onDecision(p, "reject")}><X size={14} />Reject</Button></div>}
+        {p.status === "awaiting_approval" && <div className="proposal-actions"><Button disabled={!connected || !authorized || killed || busy || !passedFirewall} onClick={() => onDecision(p, "approve")}><Check size={14} />{busy ? "Submitting…" : mode === "live" ? "Approve live buy" : "Approve buy"}</Button><Button variant="outline" disabled={!connected || !authorized || busy} onClick={() => onDecision(p, "reject")}><X size={14} />Reject</Button></div>}
         {p.status === "preparing" && <p className="muted text-xs">Preparing an unsigned transaction through the o1 API…</p>}
         {p.status === "executing" && <p className="muted text-xs">{mode === "live" ? "Submitting to Base mainnet…" : "Executing on the local Base fork…"}</p>}
       </article>;

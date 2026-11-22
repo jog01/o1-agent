@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import sample from "../../docs/sample-state.json";
 import App from "./App";
-import { request, useAgent } from "./api";
+import { request, saveApproverToken, useAgent } from "./api";
 import Settings from "./components/Settings";
 import Proposals from "./components/Proposals";
 import { weiToEth } from "./lib/utils";
@@ -25,7 +25,7 @@ const proposal = (): Proposal => ({
 });
 const response = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 400, json: async () => body }) as Response;
 
-beforeEach(() => { vi.stubGlobal("EventSource", Stream); });
+beforeEach(() => { vi.stubGlobal("EventSource", Stream); saveApproverToken(""); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe("agent connection", () => {
@@ -65,6 +65,24 @@ describe("agent connection", () => {
 });
 
 describe("guarded actions", () => {
+  it("unlocks protected actions with a saved token and re-locks after a 401", async () => {
+    const state = fixture(); state.approverTokenRequired = true; state.proposals = [proposal()];
+    const fetcher = vi.fn(async (url: string, _options?: RequestInit) => url === "/api/state" ? response(state) : response({ error: "approver token required" }, false));
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    const approve = await screen.findByRole("button", { name: "Approve buy" });
+    expect((approve as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText("Approver token"), { target: { value: "test-only-approver" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save token" }));
+    expect((approve as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(approve);
+    await screen.findByText("approver token required");
+    expect((approve as HTMLButtonElement).disabled).toBe(true);
+    const headers = fetcher.mock.calls.find(([url]) => url.endsWith("/approve"))?.[1]?.headers as Record<string, string>;
+    expect(headers["x-approver-token"]).toBe("test-only-approver");
+    expect(localStorage.getItem("o1-agent.approverToken")).toBeNull();
+  });
+
   it("keeps drafts across live updates and saves only changed policy fields", async () => {
     const state = fixture(); const onSave = vi.fn().mockResolvedValue(true);
     const props = { policy: state.policy, rules: state.rules, pending: new Set<string>(), disabled: false, onSave };

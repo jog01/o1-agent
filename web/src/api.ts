@@ -1,13 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentState } from "./types";
 
+const TOKEN_KEY = "o1-agent.approverToken";
+let memoryToken = "";
+export function getApproverToken() {
+  try { return localStorage.getItem(TOKEN_KEY) ?? memoryToken; } catch { return memoryToken; }
+}
+export function saveApproverToken(token: string) {
+  memoryToken = token;
+  try { if (token) localStorage.setItem(TOKEN_KEY, token); else localStorage.removeItem(TOKEN_KEY); } catch { /* Session-only if storage is unavailable. */ }
+}
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
+
 export async function request<T>(path: string, method = "GET", body?: unknown, signal?: AbortSignal): Promise<T> {
+  const token = method !== "GET" ? getApproverToken() : "";
   const response = await fetch(`/api${path}`, {
     method, signal: signal ?? AbortSignal.timeout(30_000), cache: "no-store",
-    ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+    headers: { ...(body === undefined ? {} : { "Content-Type": "application/json" }), ...(token ? { "x-approver-token": token } : {}) },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   const result = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(result?.error ?? `Request failed (${response.status})`);
+  if (!response.ok) throw new ApiError(result?.error ?? `Request failed (${response.status})`, response.status);
   return result as T;
 }
 
@@ -30,7 +45,7 @@ export function useAgent() {
     const controller = new AbortController();
     const accept = (next: AgentState) => {
       if (disposed) return;
-      setState(next);
+      setState(previous => ({ ...next, approverTokenRequired: next.approverTokenRequired ?? previous?.approverTokenRequired }));
       setLastUpdate(Date.now());
     };
     const poll = async () => {
