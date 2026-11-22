@@ -137,6 +137,17 @@ describe("guarded actions", () => {
     await act(async () => { Stream.current.onerror?.(); });
   });
 
+  it("refuses sub-cent buys before sending a proposal", async () => {
+    const state = fixture(); state.proposals = [];
+    const fetcher = vi.fn().mockResolvedValue(response(state)); vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await screen.findByRole("heading", { name: "Launchpad feed" });
+    fireEvent.change(screen.getByLabelText("Buy amount in USD"), { target: { value: "0.001" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Propose buy" })[0]);
+    expect(screen.getByText("Enter a buy amount of at least $0.01, in whole cents.")).toBeTruthy();
+    expect(fetcher.mock.calls.some(([url]) => url === "/api/proposals")).toBe(false);
+  });
+
   it("surfaces server error messages and formats wei without precision loss", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ error: "Kill switch is on" }, false)));
     await expect(request("/scan", "POST")).rejects.toThrow("Kill switch is on");

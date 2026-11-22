@@ -37,7 +37,7 @@ export default function App() {
   };
   const propose = (token: Token) => {
     const amountUsd = Number(amount);
-    if (!amount.trim() || !Number.isFinite(amountUsd) || amountUsd <= 0) { setNotice({ text: "Enter a buy amount greater than $0.", error: true }); return; }
+    if (!amount.trim() || !Number.isFinite(amountUsd) || amountUsd < 0.01 || Math.abs(amountUsd * 100 - Math.round(amountUsd * 100)) > 1e-8) { setNotice({ text: "Enter a buy amount of at least $0.01, in whole cents.", error: true }); return; }
     if (state?.mode === "live" && !state.policy.requireApproval && !window.confirm(`Propose ${usd(amountUsd)} of ${token.symbol}? Approval is disabled: this can spend real money immediately.`)) return;
     void act(`propose:${token.token}`, "/proposals", "POST", { token: token.token, amountUsd });
   };
