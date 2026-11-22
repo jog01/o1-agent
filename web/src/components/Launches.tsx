@@ -22,8 +22,19 @@ export default function Launches({ tokens, disabled, pending, onPropose, buyCont
       <label className="check-control"><input type="checkbox" checked={onlyPassing} onChange={e => setOnlyPassing(e.target.checked)} />Passing only</label>
     </div>
     <div className="table-scroll" tabIndex={0} role="region" aria-label="Launches table, scroll horizontally on small screens" onFocusCapture={event => {
-      // Native focus can leave a partially visible control clipped in this scrollport.
-      if (event.target !== event.currentTarget) event.target.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const target = event.target;
+      if (target === event.currentTarget) return;
+      // Wait for native focus scrolling (including the nested table scrollport) to settle.
+      requestAnimationFrame(() => {
+        if (!target.isConnected || document.activeElement !== target) return;
+        target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+        const header = target.closest(".app-shell")?.querySelector(".topbar");
+        if (!header) return;
+        const clearance = Math.max(0, header.getBoundingClientRect().bottom) + 8;
+        const top = target.getBoundingClientRect().top;
+        // Correct only document Y; retain the horizontal position and focus margin above.
+        if (top < clearance) window.scrollBy({ top: top - clearance, left: 0, behavior: "instant" });
+      });
     }}>
       <table className="launches-table">
         <thead><tr><th scope="col">Token / suite</th><th scope="col">Age</th><th scope="col" className="numeric">Trades</th><th scope="col" className="numeric">Traders</th><th scope="col" className="numeric">First 60s</th><th scope="col">Screen</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>

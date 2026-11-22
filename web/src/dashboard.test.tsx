@@ -6,6 +6,7 @@ import { request, saveApproverToken, useAgent } from "./api";
 import Settings from "./components/Settings";
 import Proposals from "./components/Proposals";
 import TokenAvatar from "./components/TokenAvatar";
+import Launches from "./components/Launches";
 import { weiToEth } from "./lib/utils";
 import type { AgentState, Proposal } from "./types";
 
@@ -37,6 +38,53 @@ beforeEach(() => {
   });
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+describe("feed focus clearance", () => {
+  function setup(headerBottom: number, controlTop: number) {
+    let frame!: FrameRequestCallback;
+    vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => { frame = callback; return 1; }));
+    const scrollBy = vi.fn(); vi.stubGlobal("scrollBy", scrollBy);
+    const state = fixture();
+    const { container, unmount } = render(<div className="app-shell"><header className="topbar" /><button>Outside table</button><Launches tokens={[{ ...state.tokens[0], screen: { pass: true, checks: [] } }]} disabled={false} pending={new Set()} onPropose={vi.fn()} /></div>);
+    const header = container.querySelector(".topbar")!;
+    vi.spyOn(header, "getBoundingClientRect").mockReturnValue({ bottom: headerBottom } as DOMRect);
+    const region = screen.getByRole("region", { name: "Launches table, scroll horizontally on small screens" });
+    const button = screen.getByRole("button", { name: "Propose buy" });
+    // Model the nested focus scroll changing both document Y and table X.
+    let top = 200;
+    vi.spyOn(button, "getBoundingClientRect").mockImplementation(() => ({ top }) as DOMRect);
+    const scrollIntoView = vi.fn(() => { top = controlTop; region.scrollLeft = 240; });
+    Object.defineProperty(button, "scrollIntoView", { configurable: true, value: scrollIntoView });
+    return { button, region, scrollBy, scrollIntoView, settle: () => act(() => frame(0)), unmount };
+  }
+
+  it.each([64, 72, 104])("clears the actual %ipx header after descendant focus settles, retaining horizontal scroll", headerBottom => {
+    const { button, region, scrollBy, scrollIntoView, settle } = setup(headerBottom, 8);
+    act(() => region.focus());
+    expect(requestAnimationFrame).not.toHaveBeenCalled();
+    act(() => button.focus());
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollBy).not.toHaveBeenCalled();
+    settle();
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest", behavior: "instant" });
+    expect(scrollBy).toHaveBeenCalledWith({ top: -headerBottom, left: 0, behavior: "instant" });
+    expect(region.scrollLeft).toBe(240);
+  });
+
+  it("avoids document jumps for visible controls and ignores stale or detached focus", () => {
+    const { button, region, scrollBy, scrollIntoView, settle, unmount } = setup(72, 200);
+    act(() => button.focus()); settle();
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(scrollBy).not.toHaveBeenCalled();
+    scrollIntoView.mockClear();
+    act(() => { region.focus(); button.focus(); screen.getByRole("button", { name: "Outside table" }).focus(); });
+    settle();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    act(() => button.focus()); unmount(); settle();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollBy).not.toHaveBeenCalled();
+  });
+});
 
 describe("agent connection", () => {
   it("falls back to polling on SSE failure and recovers to streaming", async () => {
