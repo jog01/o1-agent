@@ -1,6 +1,7 @@
 export interface Check { id: string; label: string; pass: boolean; value: string; limit: string }
 export interface Screen { pass: boolean; checks: Check[] }
 export interface Token {
+  imageUrl?: string | null;
   token: string; symbol: string; name: string; suite: string; launched_ts: number;
   trades: number; unique_traders: number; first_minute_traders: number; screen: Screen;
 }
@@ -13,6 +14,7 @@ export interface Rules {
   minUniqueTraders: number; minTrades: number; maxSniperShare: number; maxCreatorLaunches: number; maxAgeHours: number;
 }
 export interface Proposal {
+  imageUrl?: string | null;
   id: string; createdAt: number; token: string; symbol: string; name: string;
   amountUsd: number; amountEth: number; slippageBps: number; signer: string; source: string;
   status: "preparing" | "awaiting_approval" | "blocked" | "rejected" | "executing" | "filled" | "failed";

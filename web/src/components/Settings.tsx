@@ -22,11 +22,11 @@ export default function Settings({ policy, rules, disabled, pending, onSave }: {
   policy: Policy; rules: Rules; disabled: boolean; pending: Set<string>;
   onSave: (path: "policy" | "rules", patch: Record<string, unknown>) => Promise<boolean>;
 }) {
-  return <aside className="settings-rail" aria-label="Agent settings">
+  return <div className="policy-page-grid" aria-label="Agent settings">
     <SettingsForm kind="policy" value={policy} disabled={disabled} busy={pending.has("policy")} onSave={patch => onSave("policy", patch)} />
     <SettingsForm kind="rules" value={rules} disabled={disabled} busy={pending.has("rules")} onSave={patch => onSave("rules", patch)} />
-    <div className="rail-note"><LockKeyhole size={14} /><p>Limits are enforced by the agent, then checked again against the unsigned transaction. The API routes. It never decides what gets signed.</p></div>
-  </aside>;
+    <div className="rail-note policy-page-wide"><LockKeyhole size={14} /><p>Limits are enforced by the agent, then checked again against the unsigned transaction. The API routes. It never decides what gets signed.</p></div>
+  </div>;
 }
 
 function SettingsForm({ kind, value, disabled, busy, onSave }: {
