@@ -1,0 +1,113 @@
+/* o1.exchange brand: https://github.com/o1exchange/o1-exchange-brand-kit
+ * Import after the dashboard base stylesheet. All assets are same-origin.
+ */
+@font-face {
+  font-family: Poppins;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/poppins-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Poppins;
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/poppins-latin-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Poppins;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/poppins-latin-600.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: dark;
+  --font-sans: Poppins, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --o1-blue: #9cd6ff;
+  --o1-bg: #080a0d;
+  --o1-panel: #101318;
+  --o1-raised: #171b22;
+  --o1-border: #262b34;
+  --o1-text: #f4f5f7;
+  --o1-muted: #a2aab8;
+  --o1-positive: #72dbab;
+  --o1-negative: #ff929e;
+  --background: 216 24% 4%;
+  --foreground: 220 16% 96%;
+  --card: 218 20% 8%;
+  --card-foreground: 220 16% 96%;
+  --popover: 218 20% 8%;
+  --popover-foreground: 220 16% 96%;
+  --primary: 205 100% 81%;
+  --primary-foreground: 216 24% 6%;
+  --secondary: 218 19% 12%;
+  --secondary-foreground: 220 16% 96%;
+  --muted: 218 19% 12%;
+  --muted-foreground: 218 13% 68%;
+  --accent: 218 19% 15%;
+  --accent-foreground: 220 16% 96%;
+  --destructive: 354 100% 79%;
+  --destructive-foreground: 216 24% 6%;
+  --border: 219 16% 18%;
+  --input: 219 16% 23%;
+  --ring: 205 100% 81%;
+  --radius: 0.625rem;
+}
+
+html {
+  background: var(--o1-bg);
+  scroll-padding-top: 1rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--o1-bg);
+  color: var(--o1-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+button, input, textarea, select { font: inherit; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+button:not(:disabled), summary, [role='switch'] { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+:focus-visible {
+  outline: 2px solid var(--o1-blue);
+  outline-offset: 3px;
+}
+
+::selection { background: #9cd6ff33; color: #fff; }
+input, textarea, select { accent-color: var(--o1-blue); }
+input::placeholder, textarea::placeholder { color: #7f8896; }
+input[type='number'] { font-variant-numeric: tabular-nums; }
+input[type='checkbox'] { width: 16px; height: 16px; }
+textarea { resize: vertical; }
+code, pre, .mono { font-family: var(--font-mono); }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+img, svg { max-width: 100%; }
+table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { white-space: nowrap; }
+td { vertical-align: middle; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

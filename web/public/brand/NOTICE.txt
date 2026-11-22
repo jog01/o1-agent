@@ -1,0 +1,8 @@
+o1.exchange SVG assets are from:
+https://github.com/o1exchange/o1-exchange-brand-kit
+
+All brand assets remain property of o1.exchange. Their presence identifies
+the infrastructure used by this independent work sample, not a partnership
+or an official o1.exchange product.
+
+Poppins is self-hosted under the SIL Open Font License; see /fonts/OFL.txt.
