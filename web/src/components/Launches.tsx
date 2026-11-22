@@ -17,7 +17,7 @@ export default function Launches({ tokens, disabled, pending, onPropose }: {
       <span className="muted text-xs">Base · on-chain</span>
     </header>
     <div className="table-toolbar">
-      <label className="search-field"><Search size={14} /><span className="sr-only">Search launches</span><input placeholder="Search symbol, name or address" value={query} onChange={e => setQuery(e.target.value)} /></label>
+      <label className="search-field"><Search size={14} /><span className="sr-only">Search launches</span><input placeholder="Search launches" value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="check-control"><input type="checkbox" checked={onlyPassing} onChange={e => setOnlyPassing(e.target.checked)} />Passing only</label>
     </div>
     <div className="table-scroll" tabIndex={0} role="region" aria-label="Launches table, scroll horizontally on small screens">
