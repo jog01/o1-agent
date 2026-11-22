@@ -1,0 +1,7 @@
+.secrets/
+target/
+node_modules/
+*.env
+.env*
+dist/
+data/
