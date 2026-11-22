@@ -84,6 +84,8 @@ export interface Proposal {
   token: Address;
   symbol: string;
   name: string;
+  /** Token image from its on-chain contractURI metadata, via an IPFS gateway. */
+  imageUrl?: string;
   amountUsd: number;
   amountEth: number;
   slippageBps: number;

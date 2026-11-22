@@ -75,6 +75,14 @@ app.post("/api/kill", async (c) => {
   agent.setKill(b.on === true);
   return c.json(agent.policy);
 });
+app.post("/api/demo/reset", async (c) => {
+  if (!isApprover(c)) return denied(c);
+  try {
+    return c.json(await agent.resetDemo());
+  } catch (e) {
+    return fail(c, e);
+  }
+});
 app.patch("/api/policy", async (c) => {
   if (!isApprover(c)) return denied(c);
   const b = await c.req.json().catch(() => ({}));

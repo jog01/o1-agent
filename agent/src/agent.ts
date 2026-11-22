@@ -3,7 +3,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { formatUnits, parseEther, type Address } from "viem";
 import { config } from "./config.js";
-import { execute, signerAddress, walletNonce } from "./executor.js";
+import { execute, freshFork, signerAddress, walletNonce } from "./executor.js";
+import { imageUrl, resolveImages } from "./metadata.js";
 import { prepareOrder } from "./o1.js";
 import { BASE_CHAIN_ID, checkIntent, checkPrepared, defaultPolicy, validatePolicy } from "./policy.js";
 import { ethUsd } from "./price.js";
@@ -12,6 +13,7 @@ import type { IndexedToken, LogLine, Policy, Proposal, Rules, Screen } from "./t
 
 export interface ScreenedToken extends IndexedToken {
   screen: Screen;
+  imageUrl?: string;
 }
 
 interface Persisted {
@@ -101,7 +103,12 @@ export class Agent extends EventEmitter {
       return;
     }
     const now = Math.floor(Date.now() / 1000);
-    this.tokens = raw.map((t) => ({ ...t, screen: screen(t, raw, this.rules, now) }));
+    this.tokens = raw.map((t) => ({ ...t, imageUrl: imageUrl(t.token), screen: screen(t, raw, this.rules, now) }));
+    void resolveImages(raw.map((t) => t.token), () => {
+      for (const t of this.tokens) t.imageUrl = imageUrl(t.token);
+      for (const p of this.proposals) p.imageUrl ??= imageUrl(p.token);
+      this.changed();
+    });
     for (const t of this.tokens) {
       const key = t.token.toLowerCase();
       const fresh = !this.seen.has(key);
@@ -146,6 +153,7 @@ export class Agent extends EventEmitter {
       token,
       symbol: t?.symbol ?? "?",
       name: t?.name ?? "",
+      imageUrl: imageUrl(token),
       amountUsd,
       amountEth,
       slippageBps: 300,
@@ -252,6 +260,23 @@ export class Agent extends EventEmitter {
     this.say("info", `Rejected ${p.symbol} buy`);
     this.changed();
     return p;
+  }
+
+  /** Demo only: wipe proposals, spend and activity, restore default limits and re-fork Base. */
+  async resetDemo() {
+    if (config.mode !== "demo") throw new Error("Reset is only available in demo mode");
+    if (this.proposals.some((p) => p.status === "executing" || p.status === "preparing"))
+      throw new Error("Wait for the trade in progress to finish before resetting");
+    await this.queue;
+    const forkBlock = await freshFork();
+    this.policy = structuredClone(defaultPolicy);
+    this.rules = structuredClone(defaultRules);
+    this.proposals = [];
+    this.log = [];
+    this.proposed = new Set(this.tokens.filter((t) => t.screen.pass).map((t) => t.token.toLowerCase()));
+    this.say("info", `Demo reset: fresh Base fork at block ${forkBlock.toLocaleString()}, default limits restored`);
+    this.changed();
+    return { forkBlock };
   }
 
   setKill(on: boolean) {
