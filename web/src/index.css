@@ -131,6 +131,10 @@ dd { margin: 0; font-size: 11px; overflow-wrap: anywhere; }
 .settings-actions > :first-child { flex: 1; }
 .token-lists summary { padding: 3px 0 10px; }
 .token-lists .form-field + .form-field { margin-top: 10px; }
+.contract-details summary { padding: 0; font-size: 12px; }
+.contract-count { float: right; color: var(--o1-muted); font-size: 11px; }
+.contract-preview { display: block; margin-top: 6px; font-size: 11px; }
+.contract-details .form-field { margin-top: 12px; }
 .rail-note { display: flex; align-items: start; gap: 8px; color: var(--o1-muted); padding: 0 4px; }
 .rail-note svg { flex-shrink: 0; margin-top: 2px; }
 .rail-note p { margin: 0; font-size: 9px; line-height: 1.8; }
