@@ -1,0 +1,657 @@
+{
+ "mode": "demo",
+ "signer": "0xd5C2ef73E983c07ae789944AFAdae94fD20F0567",
+ "indexerOk": true,
+ "apiConfigured": true,
+ "policy": {
+  "maxPerTradeUsd": 1,
+  "maxPerDayUsd": 5,
+  "maxSlippageBps": 500,
+  "allowedChainIds": [
+   8453
+  ],
+  "allowedTargets": [
+   "0x7293d41c28e5fc2292e62d26fec60e22a145d1a5",
+   "0x0000000000001ff3684f28c67538d4d072c22734"
+  ],
+  "tokenAllowlist": [],
+  "tokenDenylist": [],
+  "requireApproval": true,
+  "autoPropose": true,
+  "killSwitch": false
+ },
+ "rules": {
+  "minUniqueTraders": 3,
+  "minTrades": 5,
+  "maxSniperShare": 0.6,
+  "maxCreatorLaunches": 3,
+  "maxAgeHours": 72
+ },
+ "spentTodayUsd": 1,
+ "tokens": [
+  {
+   "suite": "tax",
+   "token": "0x225d0ca1e3d7d8fabb746622ef44b793c575b601",
+   "pool_id": "0xba5431eee414238744df11aa9673b917a097880f8df8b9155d491520fd7b4d3f",
+   "creator": "0xfe3e83b4534283acc927649f69e44b7b43111a6a",
+   "quote_token": "0x0000000000000000000000000000000000000000",
+   "name": "Valvoline",
+   "symbol": "VVV",
+   "launched_block": 60934580,
+   "launched_ts": 1795377291,
+   "trades": 22,
+   "unique_traders": 6,
+   "first_minute_traders": 2,
+   "quote_fees": "0x1a4903d849535f",
+   "last_trade_ts": 1795377694,
+   "screen": {
+    "pass": true,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": true,
+      "value": "6",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": true,
+      "value": "22",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": true,
+      "value": "33%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "1",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "0.1 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  },
+  {
+   "suite": "standard",
+   "token": "0xb2000000000000000000006699ca24b27f241001",
+   "pool_id": "0x023263a804c68110d2aea8e8998a795219e690ee51c2f055ad2e503d0744e9e1",
+   "creator": "0x4d4caee56e9fb6e922d5e34567043304d827962a",
+   "quote_token": "0xb2000000000000000000001e800a7f5189430cd0",
+   "name": "Copium",
+   "symbol": "Copium",
+   "launched_block": 60931843,
+   "launched_ts": 1795376744,
+   "trades": 17,
+   "unique_traders": 5,
+   "first_minute_traders": 3,
+   "quote_fees": "0x160a64",
+   "last_trade_ts": 1795377641,
+   "screen": {
+    "pass": true,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": true,
+      "value": "5",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": true,
+      "value": "17",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": true,
+      "value": "60%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "3",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "0.3 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  },
+  {
+   "suite": "standard",
+   "token": "0xb200000000000000000000531df9adf3d948f601",
+   "pool_id": "0x762a30624702fd51d229d44ad193c0822e2aa3bb834b2f98fed0d064fc3cf4d9",
+   "creator": "0x4d4caee56e9fb6e922d5e34567043304d827962a",
+   "quote_token": "0xb2000000000000000000007b9fcbd005511acbd5",
+   "name": "Singularity Inu",
+   "symbol": "SI",
+   "launched_block": 60926739,
+   "launched_ts": 1795375723,
+   "trades": 133,
+   "unique_traders": 9,
+   "first_minute_traders": 3,
+   "quote_fees": "0x1cb9bbf",
+   "last_trade_ts": 1795377397,
+   "screen": {
+    "pass": true,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": true,
+      "value": "9",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": true,
+      "value": "133",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": true,
+      "value": "33%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "3",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "0.6 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  },
+  {
+   "suite": "tax",
+   "token": "0x4c0c7d55fe9c3ea5394483c7e0d387785f6ae901",
+   "pool_id": "0xab11438e6364c7c6520593e11166ae23d5011b72fa969c8aefe4bce77ed1e2e4",
+   "creator": "0xfd9664071f9cc03f07e5355e31dd9afdd18bf8f8",
+   "quote_token": "0x0000000000000000000000000000000000000000",
+   "name": "dapper",
+   "symbol": "dapper",
+   "launched_block": 60918526,
+   "launched_ts": 1795374080,
+   "trades": 0,
+   "unique_traders": 0,
+   "first_minute_traders": 0,
+   "quote_fees": "0x0",
+   "last_trade_ts": 0,
+   "screen": {
+    "pass": false,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": false,
+      "value": "0",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": false,
+      "value": "0",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": false,
+      "value": "100%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "1",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "1.0 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  },
+  {
+   "suite": "tax",
+   "token": "0x5b18b961e8cfc533ecfbb86ffbd1f73916968d01",
+   "pool_id": "0xef03c891cb3ac071c352419a5d560fb3d887a6569943cfdc029be056d79905d2",
+   "creator": "0x6afaca65a75d8e81ebc30743c2bd7dca28967f5b",
+   "quote_token": "0xacfe6019ed1a7dc6f7b508c02d1b04ec88cc21bf",
+   "name": "Private Dog",
+   "symbol": "VVVDOG",
+   "launched_block": 60909644,
+   "launched_ts": 1795372304,
+   "trades": 2,
+   "unique_traders": 1,
+   "first_minute_traders": 1,
+   "quote_fees": "0xabb5e9f0a2eb8",
+   "last_trade_ts": 1795372670,
+   "screen": {
+    "pass": false,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": false,
+      "value": "1",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": false,
+      "value": "2",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": false,
+      "value": "100%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "1",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "1.5 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  },
+  {
+   "suite": "tax",
+   "token": "0xf40203cf40d1492da998d18d40b16d91bd7cc701",
+   "pool_id": "0xccea2cb201908e3ccdef159dd12a95f643d2e340ded4b00cbcbff8c38ae91587",
+   "creator": "0x7dbf5573ca2354564f969aa3dc06c16fdd7286af",
+   "quote_token": "0xacfe6019ed1a7dc6f7b508c02d1b04ec88cc21bf",
+   "name": "VeniceCat",
+   "symbol": "VVVCAT",
+   "launched_block": 60880945,
+   "launched_ts": 1795366564,
+   "trades": 5,
+   "unique_traders": 2,
+   "first_minute_traders": 1,
+   "quote_fees": "0x4106b0b47346d5",
+   "last_trade_ts": 1795367591,
+   "screen": {
+    "pass": false,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": false,
+      "value": "2",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": true,
+      "value": "5",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": true,
+      "value": "50%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "1",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "3.1 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  },
+  {
+   "suite": "standard",
+   "token": "0xb200000000000000000000964b7464fd872f6501",
+   "pool_id": "0x82a6b95897f08e07c11b72a9454ba68b6a510c2d48e06ae951c32994d3675b1a",
+   "creator": "0xca8cf9081bde61a773fb0c03c8137606a06ed63d",
+   "quote_token": "0x0000000000000000000000000000000000000000",
+   "name": "Basehead",
+   "symbol": "BASEHEAD",
+   "launched_block": 60880698,
+   "launched_ts": 1795366515,
+   "trades": 1,
+   "unique_traders": 1,
+   "first_minute_traders": 1,
+   "quote_fees": "0x1a755a8628f7",
+   "last_trade_ts": 1795366515,
+   "screen": {
+    "pass": false,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": false,
+      "value": "1",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": false,
+      "value": "1",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": false,
+      "value": "100%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "1",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "3.1 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  },
+  {
+   "suite": "standard",
+   "token": "0xb200000000000000000000d6e1281f05c1f46e01",
+   "pool_id": "0xa3fa0a8f6952f10b918314c1ad73acbb06976b69d934e58c3e0917ee20ee17f4",
+   "creator": "0xbf880243c75266482a06bb2fd997230f134d5b21",
+   "quote_token": "0x0000000000000000000000000000000000000000",
+   "name": "plant-based vape",
+   "symbol": "CIGARETTE",
+   "launched_block": 60869956,
+   "launched_ts": 1795364366,
+   "trades": 2,
+   "unique_traders": 1,
+   "first_minute_traders": 1,
+   "quote_fees": "0xf493e2a787ff",
+   "last_trade_ts": 1795364747,
+   "screen": {
+    "pass": false,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": false,
+      "value": "1",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": false,
+      "value": "2",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": false,
+      "value": "100%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "1",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "3.7 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   }
+  }
+ ],
+ "proposals": [
+  {
+   "id": "a86c1abf",
+   "createdAt": 1795377671998,
+   "token": "0xb200000000000000000000531df9adf3d948f601",
+   "symbol": "SI",
+   "name": "Singularity Inu",
+   "amountUsd": 1,
+   "amountEth": 0.0005839,
+   "slippageBps": 300,
+   "signer": "0xd5C2ef73E983c07ae789944AFAdae94fD20F0567",
+   "source": "user",
+   "status": "filled",
+   "screen": {
+    "pass": true,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": true,
+      "value": "9",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": true,
+      "value": "133",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": true,
+      "value": "33%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "3",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "0.5 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   },
+   "violations": [],
+   "prepared": {
+    "orderId": "26dac4c2-4631-4052-b766-3bdff0609cd1",
+    "txId": "47fd9df2-99b2-4549-b19f-53e23edee21b",
+    "chainId": 8453,
+    "to": "0x0000000000001ff3684f28c67538d4d072c22734",
+    "valueWei": "583900000000000",
+    "gas": "704189",
+    "nonce": 3683404,
+    "dataBytes": 2337,
+    "permit2": false,
+    "exchange": "0x498581ff718922c3f8e6a244956af099b2652b2b",
+    "pool": "0x762a30624702fd51d229d44ad193c0822e2aa3bb834b2f98fed0d064fc3cf4d9",
+    "unsigned": "0x02f909558221058338344c830f424083a7d8c0830abebd940000000000001ff3\u2026"
+   },
+   "txHash": "0xd52f657b6548d3cb1322310c39dbfc4885ff9d74313a7c885413bdcc77ead21b",
+   "gasUsed": "561244",
+   "forkBlock": 60936487,
+   "tokensReceived": "218548.00526306372219859"
+  },
+  {
+   "id": "dea4c02f",
+   "createdAt": 1795377655325,
+   "token": "0xb200000000000000000000531df9adf3d948f601",
+   "symbol": "SI",
+   "name": "Singularity Inu",
+   "amountUsd": 1,
+   "amountEth": 0.0005839,
+   "slippageBps": 300,
+   "signer": "0xd5C2ef73E983c07ae789944AFAdae94fD20F0567",
+   "source": "user",
+   "status": "blocked",
+   "screen": {
+    "pass": true,
+    "checks": [
+     {
+      "id": "traders",
+      "label": "Unique traders",
+      "pass": true,
+      "value": "9",
+      "limit": "\u2265 3"
+     },
+     {
+      "id": "activity",
+      "label": "Trades",
+      "pass": true,
+      "value": "133",
+      "limit": "\u2265 5"
+     },
+     {
+      "id": "snipers",
+      "label": "Traders in first 60 s",
+      "pass": true,
+      "value": "33%",
+      "limit": "\u2264 60%"
+     },
+     {
+      "id": "creator",
+      "label": "Creator's launches (7 d)",
+      "pass": true,
+      "value": "3",
+      "limit": "\u2264 3"
+     },
+     {
+      "id": "age",
+      "label": "Age",
+      "pass": true,
+      "value": "0.5 h",
+      "limit": "\u2264 72 h"
+     }
+    ]
+   },
+   "violations": [
+    "Prepared tx nonce 3683401 does not match wallet nonce 3683402"
+   ],
+   "prepared": {
+    "orderId": "7ee32c2c-6cd2-4bff-b8bc-0f429d5d0421",
+    "txId": "d9a6f132-7cae-4125-95ff-40cf098bb667",
+    "chainId": 8453,
+    "to": "0x0000000000001ff3684f28c67538d4d072c22734",
+    "valueWei": "583900000000000",
+    "gas": "704189",
+    "nonce": 3683401,
+    "dataBytes": 2337,
+    "permit2": false,
+    "exchange": "0x498581ff718922c3f8e6a244956af099b2652b2b",
+    "pool": "0x762a30624702fd51d229d44ad193c0822e2aa3bb834b2f98fed0d064fc3cf4d9",
+    "unsigned": "0x02f9095582210583383449830f424083a7d8c0830abebd940000000000001ff3\u2026"
+   }
+  }
+ ],
+ "log": [
+  {
+   "ts": 1795377685549,
+   "level": "action",
+   "msg": "Filled: received 218,548.005 SI, gas 561244"
+  },
+  {
+   "ts": 1795377672725,
+   "level": "action",
+   "msg": "Approved. Signing and executing SI buy on a local Base fork"
+  },
+  {
+   "ts": 1795377672714,
+   "level": "info",
+   "msg": "o1 prepared SI buy: 0.0005839 ETH via 0x00000000\u2026, gas 704189"
+  },
+  {
+   "ts": 1795377656160,
+   "level": "warn",
+   "msg": "Refused to sign SI order: Prepared tx nonce 3683401 does not match wallet nonce 3683402"
+  },
+  {
+   "ts": 1795377649837,
+   "level": "info",
+   "msg": "Connected to indexer: 26 o1 Launchpad tokens on Base"
+  },
+  {
+   "ts": 1795377649804,
+   "level": "info",
+   "msg": "Agent started in demo mode"
+  }
+ ]
+}
