@@ -136,7 +136,7 @@ export class Agent extends EventEmitter {
       .filter((t) => t.screen.pass && !this.proposals.some((p) => p.token.toLowerCase() === t.token.toLowerCase()))
       .sort((a, b) => b.unique_traders - a.unique_traders)[0];
     if (!pick) {
-      this.say("info", "Scan: no token passes the safety screen right now");
+      this.say("info", "Scan: no new token to propose. Every token that passes the screen already has a proposal");
       return undefined;
     }
     this.say("action", `Scan: ${pick.symbol} is the strongest token that passes, proposing a buy`);
