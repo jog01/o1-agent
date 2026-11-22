@@ -114,10 +114,14 @@ td { vertical-align: middle; }
 .brand-subtitle { font-size: 9px; letter-spacing: 1px; }
 .mode-description, .connection-label, .kill-switch { font-size: 11px; }
 .dashboard { max-width: 1440px; }
-.page-heading p { font-size: 12px; }
+.page-heading { min-height: 36px; gap: 12px; margin-bottom: 16px; }
+.page-heading h1 { margin: 0; font-size: 18px; line-height: 1.35; letter-spacing: -0.3px; }
+.page-heading .eyebrow, .page-heading p { display: none; }
 .eyebrow { font-size: 10px; letter-spacing: 1.2px; }
 .panel { border-radius: 8px; }
 .panel-header { min-height: 54px; }
+.launches-panel > .panel-header { flex-wrap: wrap; gap: 12px; }
+.launches-panel .feed-controls { margin-left: auto; }
 .panel-title h2 { font-size: 13px; font-weight: 500; }
 .count-badge, .unsaved-badge { font-size: 10px; }
 .metric-label, .metric-note { font-size: 11px; }
@@ -157,8 +161,16 @@ td { vertical-align: middle; }
 .positive, .status-positive, .status-filled { color: var(--o1-positive); }
 .negative, .status-negative, .status-blocked, .status-failed { color: var(--o1-negative); }
 .launches-table tbody > tr:not(.screen-row):hover { background: #151a21; }
+.launches-table .status-negative { color: var(--o1-muted); border-color: var(--o1-border); background: var(--o1-raised); }
 /* Keep the offscreen screen-reader table header inside this scrollport. */
 .table-scroll { position: relative; scrollbar-color: #424b59 #101318; }
+
+/* Touch actions stay visible; keyboard focus reveals the entire row action. */
+@media (hover: hover) and (pointer: fine) {
+  .launches-table td:last-child .button { opacity: 0; pointer-events: none; }
+  .launches-table tr:hover td:last-child .button,
+  .launches-table tr:focus-within td:last-child .button { opacity: 1; pointer-events: auto; }
+}
 
 @media (max-width: 1023px) {
   .metric-note { font-size: 10px; }
@@ -171,7 +183,9 @@ td { vertical-align: middle; }
   .topbar-status { gap: 8px; }
   .mode-description { font-size: 10px; }
   .metric-label, .metric-note { font-size: 10px; }
-  .page-heading p { font-size: 11px; }
+  .page-heading { flex-wrap: nowrap; gap: 10px; }
+  .page-heading h1 { font-size: 17px; }
+  .page-heading > .button { flex-shrink: 0; }
   .table-toolbar { flex-wrap: wrap; gap: 10px; }
   .search-field { min-width: 160px; }
   .check-control { font-size: 11px; }
@@ -179,6 +193,7 @@ td { vertical-align: middle; }
   .check-control { min-height: 28px; }
   .feed-controls > .muted:last-child { font-size: 10px; }
   .feed-controls { gap: 8px 12px; }
+  .launches-panel .feed-controls { width: 100%; justify-content: space-between; }
   .proposal-amount time { font-size: 10px; }
   .firewall-line .muted { font-size: 10px; }
   .panel-footer { gap: 10px; flex-wrap: wrap; }
