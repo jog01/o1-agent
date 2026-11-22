@@ -47,7 +47,7 @@ export default function Proposals({ proposals, tokens = [], onViewFeed, active =
             onClick={event => { trigger.current = event.currentTarget; setSelectedId(p.id); }}
           >
             <span className="proposal-row-token"><TokenAvatar {...identity(p)} /><span className="proposal-row-copy"><strong>{tokenLabel(identity(p))}</strong><span className="proposal-row-meta">Buy · {age(p.createdAt / 1000)} ago</span></span></span>
-            <span className="proposal-row-amount"><strong>{usd(p.amountUsd)}</strong><small>{p.amountEth} ETH</small></span>
+            <span className="proposal-row-amount"><strong>{usd(p.amountUsd)}</strong><small title={`${p.amountEth} ETH`}>{p.amountEth} ETH</small></span>
             <span className="proposal-row-status"><span className={`status-pill status-${p.status}`}>{labels[p.status]}</span></span>
             <time className="proposal-row-time" dateTime={new Date(p.createdAt).toISOString()} title={new Date(p.createdAt).toLocaleString()}>{age(p.createdAt / 1000)} ago</time>
             <ChevronRight className="proposal-row-chevron" size={15} />

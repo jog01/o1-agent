@@ -28,6 +28,7 @@ const response = (body: unknown, ok = true, status = ok ? 200 : 400) => ({ ok, s
 
 beforeEach(() => {
   vi.stubGlobal("EventSource", Stream); saveApproverToken("");
+  vi.stubGlobal("scrollTo", vi.fn());
   window.history.replaceState(null, "", "/");
   // jsdom does not implement the browser's native top-layer dialog behavior.
   Object.defineProperties(HTMLDialogElement.prototype, {
@@ -237,13 +238,18 @@ describe("tabbed workspace", () => {
     const cap = await screen.findByLabelText("Per-trade cap · USD");
     expect(screen.getByRole("tabpanel").getAttribute("id")).toBe("panel-policy");
     fireEvent.change(cap, { target: { value: "0.5" } });
+    const scroll = vi.mocked(window.scrollTo); scroll.mockClear();
     fireEvent.click(screen.getByRole("tab", { name: "Feed" }));
+    expect(scroll).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "instant" });
     expect(window.location.hash).toBe("#feed");
     expect(screen.getAllByRole("tabpanel")).toHaveLength(1);
     expect(screen.queryByRole("heading", { name: "Trading policy" })).toBeNull();
+    scroll.mockClear();
     act(() => Stream.current.state({ ...state, policy: { ...state.policy, maxPerTradeUsd: 2 } }));
+    expect(scroll).not.toHaveBeenCalled();
     act(() => window.history.back());
     await waitFor(() => expect(screen.getByRole("tab", { name: "Policy" }).getAttribute("aria-selected")).toBe("true"));
+    expect(scroll).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "instant" });
     expect((cap as HTMLInputElement).value).toBe("0.5");
     fireEvent.keyDown(screen.getByRole("tab", { name: "Policy" }), { key: "ArrowRight" });
     expect(window.location.hash).toBe("#activity");
@@ -303,14 +309,35 @@ describe("tabbed workspace", () => {
     const { container, rerender } = render(<TokenAvatar {...props} imageUrl="https://example.com/token.png" />);
     const image = container.querySelector("img")!;
     expect(image.getAttribute("src")).toBe("https://example.com/token.png");
+    expect(container.textContent).toBe("TE");
+    fireEvent.load(image);
+    expect(container.textContent).toBe("");
     fireEvent.error(image);
     expect(container.querySelector("img")).toBeNull(); expect(container.textContent).toBe("TE");
     rerender(<TokenAvatar {...props} imageUrl="https://example.com/replacement.png" />);
     expect(container.querySelector("img")).not.toBeNull();
+    expect(container.textContent).toBe("TE");
     rerender(<TokenAvatar {...props} symbol=" " imageUrl="javascript:alert(1)" />);
     expect(container.querySelector("img")).toBeNull(); expect(container.textContent).toBe("TE");
     rerender(<TokenAvatar {...props} symbol=" " name=" " imageUrl=" " />);
     expect(container.textContent).toBe(props.token.slice(2, 4).toUpperCase());
+  });
+
+  it("loads same-origin cached token images and resets initials for a replacement source", () => {
+    const props = { token: proposal().token, symbol: "TEST" };
+    const source = `/api/token-image/${props.token}`;
+    const { container, rerender } = render(<TokenAvatar {...props} imageUrl={source} />);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(source);
+    expect(container.textContent).toBe("TE");
+    fireEvent.load(container.querySelector("img")!);
+    expect(container.textContent).toBe("");
+    rerender(<TokenAvatar {...props} imageUrl="https://example.com/new-logo.png" />);
+    expect(container.textContent).toBe("TE");
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toBe("TE");
+    rerender(<TokenAvatar {...props} imageUrl="//example.com/token.png" />);
+    expect(container.querySelector("img")).toBeNull();
   });
 
   it("shares API token logos between the feed and older proposals", async () => {

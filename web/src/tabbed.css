@@ -23,14 +23,15 @@
 .tabbed-shell .proposal-row[aria-expanded='true'] { background: #121c25; box-shadow: inset 2px 0 var(--o1-blue); }
 .tabbed-shell .proposal-row:focus-visible { position: relative; z-index: 1; outline: 2px solid var(--o1-blue); outline-offset: -3px; }
 .tabbed-shell .proposal-row-token { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.tabbed-shell .token-avatar { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; width: 36px; height: 36px; overflow: hidden; border: 1px solid #303945; border-radius: 50%; background: #1b2631; color: var(--o1-blue); font-size: 11px; font-weight: 500; }
-.tabbed-shell .token-image { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.tabbed-shell .token-avatar { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; width: 36px; height: 36px; overflow: hidden; border: 1px solid #303945; border-radius: 50%; background: #1b2631; color: var(--o1-blue); font-size: 11px; font-weight: 500; }
+.tabbed-shell .token-image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; opacity: 0; }
+.tabbed-shell .token-image.is-loaded { opacity: 1; }
 .tabbed-shell .proposal-row-copy { min-width: 0; }
 .tabbed-shell .proposal-row-copy > strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
 .tabbed-shell .proposal-row-meta { display: block; margin-top: 5px; overflow: hidden; color: var(--o1-muted); text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
 .tabbed-shell .proposal-row-amount { min-width: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .tabbed-shell .proposal-row-amount > strong { display: block; font-size: 13px; font-weight: 500; }
-.tabbed-shell .proposal-row-amount > small { display: block; margin-top: 5px; color: var(--o1-muted); font-size: 10px; }
+.tabbed-shell .proposal-row-amount > small { display: block; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--o1-muted); font-size: 10px; }
 .tabbed-shell .proposal-row-time { color: var(--o1-muted); font-size: 11px; text-align: right; }
 .tabbed-shell .proposal-row-chevron { color: #687585; }
 .tabbed-shell .proposal-row .status-pill { max-width: 100%; font-size: 10px; white-space: nowrap; }
@@ -81,7 +82,7 @@
 .tabbed-shell .account-menu-details dd { margin: 0; }
 .tabbed-shell .terminal-menu-panel button:disabled { opacity: .4; }
 .tabbed-shell dialog::backdrop { background: #0009; }
-.tabbed-shell .proposal-detail.is-modal { margin: 0 0 0 auto; padding: 0; color: var(--o1-text); }
+.tabbed-shell .proposal-detail.is-modal { max-width: none; margin: 0 0 0 auto; padding: 0; color: var(--o1-text); }
 .tabbed-shell .proposal-list { display: block; }
 .tabbed-shell .proposal-list > [role='listitem']:not(:last-child) .proposal-row { border-bottom: 1px solid var(--o1-border); }
 .tabbed-shell .proposal-row-meta { display: none; }
@@ -98,7 +99,7 @@
 }
 @media (min-width: 1100px) {
   .tabbed-shell .proposal-workspace.has-selection { grid-template-columns: minmax(0, 1fr) 400px; }
-  .tabbed-shell .proposal-workspace.has-selection .proposal-row { grid-template-columns: minmax(0, 1fr) 84px 128px 56px 14px; gap: 12px; padding-inline: 16px; }
+  .tabbed-shell .proposal-workspace.has-selection .proposal-row { grid-template-columns: minmax(0, 1fr) 96px 128px 56px 14px; gap: 12px; padding-inline: 16px; }
 }
 @media (max-width: 1099px) {
   .tabbed-shell .terminal-tabs { gap: 18px; }

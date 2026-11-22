@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useState, type KeyboardEvent } from "react";
 import { Activity, ClipboardList, Radio, ShieldCheck } from "lucide-react";
 
 const tabs = [
@@ -15,6 +15,9 @@ function tabFromHash(): Tab {
 
 export function useNavigation() {
   const [tab, setTab] = useState<Tab>(tabFromHash);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [tab]);
   useEffect(() => {
     const navigate = () => {
       // The skip link must focus the current page, not change tabs.
