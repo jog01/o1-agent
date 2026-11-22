@@ -2,7 +2,7 @@ import { createPublicClient, http, parseAbi, type Address } from "viem";
 import { base } from "viem/chains";
 import { config } from "./config.js";
 
-const GATEWAY = process.env.IPFS_GATEWAY ?? "https://gateway.pinata.cloud/ipfs/";
+const GATEWAY = (process.env.IPFS_GATEWAY ?? "https://gateway.pinata.cloud/ipfs").replace(/\/*$/, "/");
 const client = createPublicClient({ chain: base, transport: http(config.baseRpcUrl, { timeout: 10_000 }) });
 const abi = parseAbi(["function contractURI() view returns (string)"]);
 
@@ -18,8 +18,9 @@ export function toGateway(uri: string): string | undefined {
 
 async function lookup(token: Address): Promise<string | null> {
   const uri = await client.readContract({ address: token, abi, functionName: "contractURI" });
-  const url = toGateway(uri);
-  if (!url) return null;
+  // Creators control contractURI, so the server only ever fetches it from the IPFS gateway, never an arbitrary host.
+  if (!uri.startsWith("ipfs://")) return null;
+  const url = toGateway(uri)!;
   const r = await fetch(url, { signal: AbortSignal.timeout(10_000) });
   if (!r.ok) throw new Error(`metadata ${r.status}`);
   const meta = (await r.json()) as { image?: unknown };

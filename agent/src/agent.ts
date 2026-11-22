@@ -269,10 +269,14 @@ export class Agent extends EventEmitter {
       throw new Error("Wait for the trade in progress to finish before resetting");
     await this.queue;
     const forkBlock = await freshFork();
+    if (this.proposals.some((p) => p.status === "executing" || p.status === "preparing"))
+      throw new Error("A trade started while resetting; try again once it finishes");
     this.policy = structuredClone(defaultPolicy);
     this.rules = structuredClone(defaultRules);
     this.proposals = [];
     this.log = [];
+    const now = Math.floor(Date.now() / 1000);
+    this.tokens = this.tokens.map((t) => ({ ...t, screen: screen(t, this.tokens, this.rules, now) }));
     this.proposed = new Set(this.tokens.filter((t) => t.screen.pass).map((t) => t.token.toLowerCase()));
     this.say("info", `Demo reset: fresh Base fork at block ${forkBlock.toLocaleString()}, default limits restored`);
     this.changed();
