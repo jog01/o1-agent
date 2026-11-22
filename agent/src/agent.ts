@@ -34,6 +34,7 @@ export class Agent extends EventEmitter {
   private seen = new Set<string>();
   private proposed = new Set<string>();
   private queue: Promise<unknown> = Promise.resolve();
+  private resetting = false;
   private primed = false;
 
   constructor() {
@@ -118,10 +119,10 @@ export class Agent extends EventEmitter {
         continue;
       }
       if (fresh) this.say("info", `New launch: ${t.symbol || t.token} (${t.suite})`);
-      if (this.policy.autoPropose && t.screen.pass && !this.proposed.has(key) && !this.proposals.some((p) => p.token.toLowerCase() === key)) {
+      if (!this.resetting && this.policy.autoPropose && t.screen.pass && !this.proposed.has(key) && !this.proposals.some((p) => p.token.toLowerCase() === key)) {
         this.proposed.add(key);
         this.say("action", `${t.symbol} passed the safety screen, proposing a $${this.policy.maxPerTradeUsd} buy`);
-        void this.propose(t.token, this.policy.maxPerTradeUsd, "agent");
+        this.propose(t.token, this.policy.maxPerTradeUsd, "agent").catch((e) => this.say("warn", `Auto-propose failed: ${(e as Error).message}`));
       }
     }
     this.primed = true;
@@ -145,7 +146,9 @@ export class Agent extends EventEmitter {
   async propose(token: Address, amountUsd: number, source: Proposal["source"]): Promise<Proposal> {
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) throw new Error("amountUsd must be a positive number");
     const t = this.tokens.find((x) => x.token.toLowerCase() === token.toLowerCase());
+    if (this.resetting) throw new Error("Demo reset in progress");
     const price = await ethUsd();
+    if (this.resetting) throw new Error("Demo reset in progress");
     const amountEth = Number((amountUsd / price).toFixed(8));
     const p: Proposal = {
       id: crypto.randomUUID().slice(0, 8),
@@ -207,6 +210,7 @@ export class Agent extends EventEmitter {
   }
 
   async approve(id: string): Promise<Proposal> {
+    if (this.resetting) throw new Error("Demo reset in progress");
     const p = this.must(id);
     if (p.status !== "awaiting_approval" || !p.prepared) throw new Error(`Proposal is ${p.status}`);
     const current = this.tokens.find((x) => x.token.toLowerCase() === p.token.toLowerCase())?.screen;
@@ -265,23 +269,29 @@ export class Agent extends EventEmitter {
   /** Demo only: wipe proposals, spend and activity, restore default limits and re-fork Base. */
   async resetDemo() {
     if (config.mode !== "demo") throw new Error("Reset is only available in demo mode");
+    if (this.resetting) throw new Error("Demo reset already in progress");
     if (this.proposals.some((p) => p.status === "executing" || p.status === "preparing"))
       throw new Error("Wait for the trade in progress to finish before resetting");
-    await this.queue;
-    const forkBlock = await freshFork();
-    if (this.proposals.some((p) => p.status === "executing" || p.status === "preparing"))
-      throw new Error("A trade started while resetting; try again once it finishes");
-    this.policy = structuredClone(defaultPolicy);
-    this.rules = structuredClone(defaultRules);
-    this.proposals = [];
-    this.log = [];
-    const now = Math.floor(Date.now() / 1000);
-    this.tokens = this.tokens.map((t) => ({ ...t, screen: screen(t, this.tokens, this.rules, now) }));
-    this.proposed = new Set(this.tokens.filter((t) => t.screen.pass).map((t) => t.token.toLowerCase()));
-    this.say("info", `Demo reset: fresh Base fork at block ${forkBlock.toLocaleString()}, default limits restored`);
-    this.changed();
-    return { forkBlock };
+    this.resetting = true;
+    try {
+      const run = this.queue.then(() => freshFork());
+      this.queue = run.catch(() => {});
+      const forkBlock = await run;
+      this.policy = structuredClone(defaultPolicy);
+      this.rules = structuredClone(defaultRules);
+      this.proposals = [];
+      this.log = [];
+      const now = Math.floor(Date.now() / 1000);
+      this.tokens = this.tokens.map((t) => ({ ...t, screen: screen(t, this.tokens, this.rules, now) }));
+      this.proposed = new Set(this.tokens.filter((t) => t.screen.pass).map((t) => t.token.toLowerCase()));
+      this.say("info", `Demo reset: fresh Base fork at block ${forkBlock.toLocaleString()}, default limits restored`);
+      this.changed();
+      return { forkBlock };
+    } finally {
+      this.resetting = false;
+    }
   }
+
 
   setKill(on: boolean) {
     this.policy.killSwitch = on;
