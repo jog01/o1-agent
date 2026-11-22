@@ -85,6 +85,44 @@ describe("agent connection", () => {
 });
 
 describe("guarded actions", () => {
+  it("keeps kill-switch state truthful after another client releases it", async () => {
+    let state = fixture(); state.policy.killSwitch = false;
+    const fetcher = vi.fn(async (url: string) => {
+      if (url === "/api/kill") state = { ...state, policy: { ...state.policy, killSwitch: true } };
+      return response(state);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await waitFor(() => expect((screen.getByRole("button", { name: "Activate kill switch" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Activate kill switch" }));
+    await screen.findByText(/Trading halted\. Pending approvals cancelled\./);
+    await waitFor(() => expect((screen.getByRole("button", { name: "Release kill switch" }) as HTMLButtonElement).disabled).toBe(false));
+    state = { ...state, policy: { ...state.policy, killSwitch: false } };
+    act(() => Stream.current.state(state));
+    expect(screen.getByRole("button", { name: "Activate kill switch" }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByText(/Trading halted\.|Kill switch on\./)).toBeNull();
+  });
+
+  it("counts passing launches within the current feed filters", async () => {
+    window.history.replaceState(null, "", "/#feed");
+    const state = fixture();
+    state.tokens = [
+      { ...state.tokens[0], symbol: "PASS", name: "Passing launch", screen: { pass: true, checks: [] } },
+      { ...state.tokens[0], token: "0x0000000000000000000000000000000000000099", symbol: "FAIL", name: "Failing launch", screen: { pass: false, checks: [] } },
+    ];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(state)));
+    render(<App />);
+    await screen.findByText("2 launches");
+    fireEvent.change(screen.getByPlaceholderText("Search launches"), { target: { value: "FAIL" } });
+    expect(screen.getByText("1 launches")).toBeTruthy();
+    expect(screen.getByText("0 pass safety screening")).toBeTruthy();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Passing only" }));
+    expect(screen.getByText("0 launches")).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText("Search launches"), { target: { value: "" } });
+    expect(screen.getByText("1 launches")).toBeTruthy();
+    expect(screen.getByText("1 pass safety screening")).toBeTruthy();
+  });
+
   it("unlocks protected actions with a saved token and re-locks after a 401", async () => {
     const state = fixture(); state.approverTokenRequired = true; state.proposals = [proposal()];
     const fetcher = vi.fn(async (url: string, _options?: RequestInit) => url === "/api/state" ? response(state) : response({ error: "approver token required" }, false, 401));
@@ -293,7 +331,7 @@ describe("demo reset", () => {
     fireEvent(dialog, new Event("cancel", { cancelable: true }));
     expect(screen.getByRole("dialog")).toBe(dialog);
     state = fixture(); state.mode = "demo"; state.proposals = []; state.spentTodayUsd = 0; state.log = [];
-    await act(async () => { finish(response({ ok: true })); });
+    await act(async () => { finish(response({ forkBlock: 12345678 })); });
     await screen.findByText("Demo reset.");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(window.location.hash).toBe("#policy");

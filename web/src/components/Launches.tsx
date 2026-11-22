@@ -33,7 +33,7 @@ export default function Launches({ tokens, disabled, pending, onPropose, buyCont
       </table>
     </div>
     {!filtered.length && <div className="empty-state"><Radio size={22} /><h3>{tokens.length ? "No matching launches" : "Waiting for launches"}</h3><p>{tokens.length ? "Try another search or turn off the passing filter." : "The feed will appear when the indexer delivers launch data."}</p></div>}
-    <footer className="panel-footer"><span>{filtered.length} launches</span><span>{tokens.filter(t => t.screen.pass).length} pass safety screening</span></footer>
+    <footer className="panel-footer"><span>{filtered.length} launches</span><span>{filtered.filter(t => t.screen.pass).length} pass safety screening</span></footer>
   </section>;
 }
 
