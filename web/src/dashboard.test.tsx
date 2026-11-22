@@ -156,7 +156,7 @@ describe("guarded actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save token" }));
     expect((approve as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(approve);
-    await screen.findByText("approver token required");
+    await within(screen.getByRole("complementary", { name: "Review proposal" })).findByText("approver token required");
     expect((approve as HTMLButtonElement).disabled).toBe(true);
     const headers = fetcher.mock.calls.find(([url]) => url.endsWith("/approve"))?.[1]?.headers as Record<string, string>;
     expect(headers["x-approver-token"]).toBe("test-only-approver");
