@@ -105,9 +105,10 @@ export class Agent extends EventEmitter {
     }
     const now = Math.floor(Date.now() / 1000);
     this.tokens = raw.map((t) => ({ ...t, imageUrl: imageUrl(t.token), screen: screen(t, raw, this.rules, now) }));
-    void resolveImages(raw.map((t) => t.token), () => {
+    for (const p of this.proposals) p.imageUrl = imageUrl(p.token);
+    void resolveImages([...raw.map((t) => t.token), ...this.proposals.map((p) => p.token)], () => {
       for (const t of this.tokens) t.imageUrl = imageUrl(t.token);
-      for (const p of this.proposals) p.imageUrl = imageUrl(p.token) ?? p.imageUrl;
+      for (const p of this.proposals) p.imageUrl = imageUrl(p.token);
       this.changed();
     });
     for (const t of this.tokens) {

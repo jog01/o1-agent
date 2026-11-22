@@ -19,3 +19,13 @@ describe("imageUrl", () => {
     expect(imageUrl("0x0000000000000000000000000000000000000001")).toBeUndefined();
   });
 });
+
+describe("readCapped", () => {
+  it("returns small bodies and drops ones over the cap", async () => {
+    const { readCapped } = await import("../src/metadata.js");
+    expect((await readCapped(new Response(new Uint8Array(10)), 16))?.byteLength).toBe(10);
+    expect(await readCapped(new Response(new Uint8Array(32)), 16)).toBeNull();
+    const big = new Response(new Uint8Array(4), { headers: { "content-length": "999" } });
+    expect(await readCapped(big, 16)).toBeNull();
+  });
+});

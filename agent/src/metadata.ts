@@ -32,6 +32,27 @@ async function fromIpfs(uri: unknown): Promise<Response | null> {
   return r;
 }
 
+/** Reads at most `max` bytes, giving up (and cancelling the download) as soon as the body is larger. */
+export async function readCapped(r: Response, max: number): Promise<ArrayBuffer | null> {
+  if (Number(r.headers.get("content-length") ?? 0) > max || !r.body) {
+    await r.body?.cancel();
+    return null;
+  }
+  const reader = r.body.getReader();
+  const out = new Uint8Array(max);
+  let n = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return out.slice(0, n).buffer;
+    if (n + value.byteLength > max) {
+      await reader.cancel();
+      return null;
+    }
+    out.set(value, n);
+    n += value.byteLength;
+  }
+}
+
 async function lookup(token: Address): Promise<CachedImage | null> {
   const uri = await client.readContract({ address: token, abi, functionName: "contractURI" });
   const meta = await fromIpfs(uri);
@@ -40,8 +61,8 @@ async function lookup(token: Address): Promise<CachedImage | null> {
   if (!img) return null;
   const type = (img.headers.get("content-type") ?? "").split(";")[0].trim();
   if (!IMAGE_TYPES.has(type)) return null;
-  const body = await img.arrayBuffer();
-  return body.byteLength <= MAX_IMAGE_BYTES ? { type, body } : null;
+  const body = await readCapped(img, MAX_IMAGE_BYTES);
+  return body ? { type, body } : null;
 }
 
 export function cachedImage(token: string): CachedImage | undefined {
