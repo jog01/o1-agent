@@ -1,8 +1,20 @@
 # Architecture
 
+Sequa is three services in one repo: a Rust indexer, a TypeScript agent and a React dashboard, with a local Base fork for demo trades.
+
+| Doc | Covers |
+|---|---|
+| [Indexer](INDEXER.md) | How Launchpad events are read, decoded and aggregated |
+| [Agent](AGENT.md) | Screen, policy, firewall, proposal states, executor modes, API, MCP |
+| [Dashboard](WEB.md) | Tabs, live updates, screenshots |
+| [Timeline](TIMELINE.md) | Startup order and one trade from launch to fill, file by file |
+| [Going live](GO-LIVE.md) | Wallet, fork mode and live mode |
+
+## System
+
 ```mermaid
 flowchart LR
-  subgraph Base mainnet
+  subgraph base [Base mainnet]
     F[o1 Launchpad factories<br/>Launched]
     H[Uniswap v4 hooks<br/>Trade]
   end
@@ -20,33 +32,22 @@ flowchart LR
   S -- /tokens --> R
   X -- impersonate / raw tx --> K[(anvil Base fork)]
   X -. live only .-> C[o1 /order/complete]
-  D[dashboard] <-- SSE + REST --> agent
+  D[dashboard · React] <-- SSE + REST --> agent
   M[Claude / Cursor<br/>MCP] -- propose only --> agent
 ```
 
-## Trade lifecycle
+## Ports
 
-```mermaid
-sequenceDiagram
-  participant U as Human
-  participant A as Agent
-  participant O as o1 API
-  participant F as Base fork
-  A->>A: screen token (traders, snipers, creator, age)
-  A->>A: checkIntent (caps, chain, slippage, lists, kill switch)
-  A->>O: POST /api/v2/order (signer, token, uiAmount)
-  O-->>A: unsigned EIP-1559 tx
-  A->>A: checkPrepared (chainId, target allowlist, value, nonce)
-  A-->>U: awaiting_approval (what will be signed)
-  U->>A: approve
-  A->>A: re-run both checks
-  A->>F: anvil_reset to latest block, then send tx
-  F-->>A: receipt + token balance delta
-```
+| Service | Port | Talks to |
+|---|---|---|
+| Anvil fork | 8545 | Base RPC |
+| Indexer | 7070 | Base RPC |
+| Agent + dashboard | 8787 | indexer, fork, o1 API, Coinbase price |
 
 ## Why these choices
 
-- **Indexer reads the chain directly.** o1's Launchpad emits `Launched` on each factory and `Trade` on each v4 hook. Reading these with no third-party API keeps the data honest and fast: a 7-day backfill over all four Base suites takes about 3 s (100 ms per 10k-block range).
+- **Indexer reads the chain directly.** o1's Launchpad emits `Launched` on each factory and `Trade` on each v4 hook. Reading these with no third-party API keeps the data honest and fast: a 7-day backfill over all four Base suites takes about 3 s.
+- **Rust for the hot path, TypeScript for the rest.** The indexer decodes every log on Base's Launchpad; the agent is I/O-bound glue around o1's API, viem and the UI.
 - **Sniper signal from raw trades.** The share of unique traders who bought in the first 60 s is a cheap, robust proxy for bundled or sniped launches.
 - **The API routes; the wallet decides.** o1's prepared transaction is decoded and checked before signing. On the first live run the firewall blocked an unfamiliar o1 router until it was explicitly allowlisted, which is the point.
 - **The fork is reset to the latest block per trade.** That way the fork state matches what o1 quoted against, so fills are realistic.
