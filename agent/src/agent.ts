@@ -242,7 +242,7 @@ export class Agent extends EventEmitter {
         this.changed();
         return p;
       }
-      p.amountEth = Number((p.amountUsd / price).toFixed(8));
+      p.amountEth = Math.min(p.amountEth, Number((p.amountUsd / price).toFixed(8)));
       const ok = await this.quote(p);
       this.changed();
       if (!ok) return p;
