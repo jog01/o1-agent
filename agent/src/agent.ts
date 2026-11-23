@@ -234,7 +234,7 @@ export class Agent extends EventEmitter {
       p.status = "preparing";
       this.changed();
       this.say("info", `Quote for ${p.symbol} is stale, asking o1 for a fresh one before signing`);
-      const price = await ethUsd().catch(() => undefined);
+      const price = await ethUsd(true).catch(() => undefined);
       if (p.status !== "preparing") return p;
       if (!price) {
         p.status = "failed";
