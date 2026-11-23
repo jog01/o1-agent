@@ -95,6 +95,7 @@ export interface Proposal {
   screen?: Screen;
   violations: string[];
   prepared?: PreparedTx;
+  preparedAt?: number;
   txHash?: Hex;
   forkBlock?: number;
   gasUsed?: string;

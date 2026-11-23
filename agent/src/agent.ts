@@ -24,6 +24,9 @@ interface Persisted {
 
 const DAY = 86_400_000;
 
+/** o1 orders expire about five minutes after they are prepared. */
+const QUOTE_TTL_MS = 60_000;
+
 export class Agent extends EventEmitter {
   policy: Policy = structuredClone(defaultPolicy);
   rules: Rules = structuredClone(defaultRules);
@@ -180,40 +183,72 @@ export class Agent extends EventEmitter {
       return p;
     }
     this.changed();
+    if (await this.quote(p)) {
+      this.say("info", `o1 prepared ${p.symbol} buy: ${amountEth} ETH via ${p.prepared!.to.slice(0, 10)}…, gas ${p.prepared!.gas}`);
+      if (!this.policy.requireApproval && source !== "mcp") void this.approve(p.id);
+    }
+    this.changed();
+    return p;
+  }
+
+  /** Asks o1 for a fresh unsigned order and runs the firewall on it. Returns true when it is safe to sign. */
+  private async quote(p: Proposal): Promise<boolean> {
     try {
       const [tx] = await prepareOrder({
         signer: p.signer,
-        token,
-        amount: amountEth.toFixed(8),
+        token: p.token,
+        amount: p.amountEth.toFixed(8),
         direction: "buy",
         slippageBps: p.slippageBps,
         mevProtection: true,
       });
+      if (p.status !== "preparing") return false;
       p.prepared = tx;
+      p.preparedAt = Date.now();
       // In demo mode the fork impersonates the signer, so its live mainnet nonce is irrelevant.
       const nonce = config.mode === "demo" ? undefined : await walletNonce(p.signer).catch(() => undefined);
-      p.violations = checkPrepared(this.policy, tx, p.signer, parseEther(amountEth.toFixed(18)), nonce);
+      if (p.status !== "preparing") return false;
+      p.violations = checkPrepared(this.policy, tx, p.signer, parseEther(p.amountEth.toFixed(18)), nonce);
       if (p.violations.length) {
         p.status = "blocked";
         this.say("warn", `Refused to sign ${p.symbol} order: ${p.violations.join("; ")}`);
-      } else {
-        p.status = "awaiting_approval";
-        this.say("info", `o1 prepared ${p.symbol} buy: ${amountEth} ETH via ${tx.to.slice(0, 10)}…, gas ${tx.gas}`);
-        if (!this.policy.requireApproval && source !== "mcp") void this.approve(p.id);
+        return false;
       }
+      p.status = "awaiting_approval";
+      return true;
     } catch (e: any) {
+      if (p.status !== "preparing") return false;
       p.status = "failed";
       p.error = String(e.message ?? e);
       this.say("warn", `o1 could not prepare ${p.symbol}: ${p.error}`);
+      return false;
     }
-    this.changed();
-    return p;
   }
 
   async approve(id: string): Promise<Proposal> {
     if (this.resetting) throw new Error("Demo reset in progress");
     const p = this.must(id);
     if (p.status !== "awaiting_approval" || !p.prepared) throw new Error(`Proposal is ${p.status}`);
+    if (Date.now() - (p.preparedAt ?? 0) > QUOTE_TTL_MS) {
+      // o1 orders carry a short deadline, so an order approved minutes later would revert. Re-quote first.
+      p.status = "preparing";
+      this.changed();
+      this.say("info", `Quote for ${p.symbol} is stale, asking o1 for a fresh one before signing`);
+      const price = await ethUsd(true).catch(() => undefined);
+      if (p.status !== "preparing") return p;
+      if (!price) {
+        p.status = "failed";
+        p.error = "Could not refresh the ETH price for a new quote";
+        this.changed();
+        return p;
+      }
+      p.amountEth = Math.min(p.amountEth, Number((p.amountUsd / price).toFixed(8)));
+      p.amountUsd = Math.min(p.amountUsd, Number((p.amountEth * price).toFixed(2)));
+      const ok = await this.quote(p);
+      this.changed();
+      if (!ok) return p;
+      if (this.resetting) throw new Error("Demo reset in progress");
+    }
     const current = this.tokens.find((x) => x.token.toLowerCase() === p.token.toLowerCase())?.screen;
     if (current) p.screen = current;
     const again = [
@@ -296,7 +331,7 @@ export class Agent extends EventEmitter {
 
   setKill(on: boolean) {
     this.policy.killSwitch = on;
-    if (on) for (const p of this.proposals) if (p.status === "awaiting_approval") { p.status = "rejected"; p.violations = ["Kill switch"]; }
+    if (on) for (const p of this.proposals) if (p.status === "awaiting_approval" || p.status === "preparing") { p.status = "rejected"; p.violations = ["Kill switch"]; }
     this.say("warn", on ? "KILL SWITCH ON: all pending orders cancelled, nothing will be signed" : "Kill switch off");
     this.changed();
   }
