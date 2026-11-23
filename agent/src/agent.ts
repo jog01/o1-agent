@@ -202,10 +202,12 @@ export class Agent extends EventEmitter {
         slippageBps: p.slippageBps,
         mevProtection: true,
       });
+      if (p.status !== "preparing") return false;
       p.prepared = tx;
       p.preparedAt = Date.now();
       // In demo mode the fork impersonates the signer, so its live mainnet nonce is irrelevant.
       const nonce = config.mode === "demo" ? undefined : await walletNonce(p.signer).catch(() => undefined);
+      if (p.status !== "preparing") return false;
       p.violations = checkPrepared(this.policy, tx, p.signer, parseEther(p.amountEth.toFixed(18)), nonce);
       if (p.violations.length) {
         p.status = "blocked";
@@ -215,6 +217,7 @@ export class Agent extends EventEmitter {
       p.status = "awaiting_approval";
       return true;
     } catch (e: any) {
+      if (p.status !== "preparing") return false;
       p.status = "failed";
       p.error = String(e.message ?? e);
       this.say("warn", `o1 could not prepare ${p.symbol}: ${p.error}`);
@@ -231,6 +234,15 @@ export class Agent extends EventEmitter {
       p.status = "preparing";
       this.changed();
       this.say("info", `Quote for ${p.symbol} is stale, asking o1 for a fresh one before signing`);
+      const price = await ethUsd().catch(() => undefined);
+      if (p.status !== "preparing") return p;
+      if (!price) {
+        p.status = "failed";
+        p.error = "Could not refresh the ETH price for a new quote";
+        this.changed();
+        return p;
+      }
+      p.amountEth = Number((p.amountUsd / price).toFixed(8));
       const ok = await this.quote(p);
       this.changed();
       if (!ok) return p;
@@ -318,7 +330,7 @@ export class Agent extends EventEmitter {
 
   setKill(on: boolean) {
     this.policy.killSwitch = on;
-    if (on) for (const p of this.proposals) if (p.status === "awaiting_approval") { p.status = "rejected"; p.violations = ["Kill switch"]; }
+    if (on) for (const p of this.proposals) if (p.status === "awaiting_approval" || p.status === "preparing") { p.status = "rejected"; p.violations = ["Kill switch"]; }
     this.say("warn", on ? "KILL SWITCH ON: all pending orders cancelled, nothing will be signed" : "Kill switch off");
     this.changed();
   }
