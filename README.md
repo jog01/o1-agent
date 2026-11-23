@@ -1,7 +1,5 @@
 # Sequa
 
-A guarded trading agent for o1 Launchpad on Base: every trade runs read → screen → prepare (o1 API) → firewall → you approve → execute.
-
 A guarded trading agent for [o1.exchange](https://o1.exchange) on Base.
 
 It watches the o1 Launchpad on-chain, screens every new token against safety rules, prepares trades through the [o1 Trading API](https://docs.o1.exchange/api/trading), and only signs inside hard limits a human sets. It follows o1's own [safe agent workflow](https://docs.o1.exchange/launchpad/integration/data-ai): read, prepare unsigned, show, then sign.
@@ -13,7 +11,7 @@ It watches the o1 Launchpad on-chain, screens every new token against safety rul
 | [`indexer/`](indexer) | Rust. Reads every o1 Launchpad suite on Base from the chain, keeps per-token stats, streams events. |
 | [`agent/`](agent) | TypeScript. Safety screen, policy, o1 Trading API, transaction firewall, approval queue, fork/live executor, MCP server. |
 | `web/` | Dashboard (React + Vite + Tailwind + shadcn). |
-| [`docs/`](docs) | [Architecture](docs/ARCHITECTURE.md) · [Going live](docs/GO-LIVE.md) |
+| [`docs/`](docs) | [Architecture](docs/ARCHITECTURE.md) · [Indexer](docs/INDEXER.md) · [Agent](docs/AGENT.md) · [Dashboard](docs/WEB.md) · [Timeline](docs/TIMELINE.md) · [Going live](docs/GO-LIVE.md) |
 
 ## Run the whole thing
 
